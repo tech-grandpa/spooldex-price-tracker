@@ -1,0 +1,30 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: pricetracker
+      POSTGRES_PASSWORD: pricetracker
+      POSTGRES_DB: pricetracker
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      - db
+    ports:
+      - "3100:3100"
+    environment:
+      DATABASE_URL: postgresql://pricetracker:pricetracker@db:5432/pricetracker
+      PORT: "3100"
+      AMAZON_ACCESS_KEY: ${AMAZON_ACCESS_KEY:-}
+      AMAZON_SECRET_KEY: ${AMAZON_SECRET_KEY:-}
+      AMAZON_PARTNER_TAG: ${AMAZON_PARTNER_TAG:-}
+      AMAZON_MARKETPLACE: ${AMAZON_MARKETPLACE:-www.amazon.de}
+
+volumes:
+  pgdata:
