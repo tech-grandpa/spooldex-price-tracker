@@ -1,84 +1,71 @@
 # Spooldex Price Tracker
 
-Filament price tracker service — scrapes shops, tracks prices over time, and serves a REST API that [Spooldex](https://github.com/tech-grandpa/spooldex) consumes.
+Public filament price tracker for Spooldex. Phase 1 focuses on crawlable catalog pages, read-only APIs, and worker-driven scraping for open shops in the DE market.
 
-## Architecture
+## Stack
 
-```
-┌──────────────┐     ┌──────────────┐     ┌──────────────┐
-│  Schedulers  │────▶│   Scrapers   │────▶│   Postgres   │
-│  (node-cron) │     │ (PA-API etc) │     │   (Drizzle)  │
-└──────────────┘     └──────────────┘     └──────┬───────┘
-                                                  │
-                                           ┌──────▼───────┐
-                                           │  Express API  │
-                                           │  /api/v1/...  │
-                                           └──────────────┘
-```
+- Next.js 16 + React 19
+- Prisma + PostgreSQL
+- Playwright scrapers
+- Tailwind 4
+- Cloudflare R2 image caching (optional in local dev)
 
-### Key entities
+## Local Development
 
-- **Filament** — canonical filament (brand, series, material, color)
-- **Shop** — a retailer (Amazon DE, 3DJake, Bambu Store EU)
-- **Offer** — a product listing (may be single spool or multi-pack)
-- **OfferItem** — what's inside an offer (links offer → filament)
-- **PriceSnapshot** — one row per scrape, enables price history
-
-## Quick Start
+1. Copy the environment template:
 
 ```bash
-# Clone
-git clone https://github.com/tech-grandpa/spooldex-price-tracker.git
-cd spooldex-price-tracker
-
-# Install
-npm install
-
-# Start Postgres (Docker)
-docker compose up -d db
-
-# Configure
 cp .env.example .env
-# Edit .env with your database URL and Amazon PA-API keys
+```
 
-# Migrate & seed
+2. Start PostgreSQL:
+
+```bash
+docker compose up -d db
+```
+
+3. Install dependencies and generate Prisma client:
+
+```bash
+npm install
 npm run db:generate
-npm run db:migrate
-npm run db:seed
+```
 
-# Dev server
+4. Push the schema and seed:
+
+```bash
+npm run db:push
+npm run seed
+```
+
+5. Start the app:
+
+```bash
 npm run dev
 ```
 
-## API Endpoints
+Open `http://localhost:3000`.
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/v1/health` | Health check |
-| GET | `/api/v1/filaments` | List filaments (query: brand, material) |
-| GET | `/api/v1/filaments/:id` | Single filament |
-| GET | `/api/v1/filaments/:id/offers` | Offers for a filament |
-| GET | `/api/v1/filaments/:id/price-history` | Price snapshots (sparkline data) |
-| GET | `/api/v1/offers` | Search offers (query: ean, q) |
-| GET | `/api/v1/markets` | Available markets |
+## Worker
 
-## Docker
+- Run all enabled shop scrapers once:
 
 ```bash
-docker compose up --build
+npm run scrape
 ```
 
-This starts Postgres and the price tracker API on port 3100.
+- Run the scheduler worker:
 
-## Tech Stack
+```bash
+npm run worker
+```
 
-- **Runtime:** Node.js 22+ (ESM)
-- **Language:** TypeScript (strict mode)
-- **Database:** PostgreSQL 16 + Drizzle ORM
-- **API:** Express 5
-- **Scrapers:** Amazon PA-API (more planned)
-- **Scheduler:** node-cron
+## Deploy
 
-## License
+`docker-compose.yml` runs:
 
-MIT
+- `web` on port `3000`
+- `worker` for scheduled scraping
+- `db` for PostgreSQL
+
+The intended Phase 1 target is `10.10.10.227`, exposed as `https://spooldex-tracker.acgt.dev`.

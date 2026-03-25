@@ -1,0 +1,312 @@
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { SiteShell } from "@/components/site-shell";
+import { OfferList } from "@/components/offer-list";
+import { FilamentCard } from "@/components/filament-card";
+import { getFilamentDetail } from "@/lib/data";
+import { formatCurrency } from "@/lib/utils";
+
+export const dynamic = "force-dynamic";
+
+interface FilamentPageProps {
+  params: Promise<{ slug: string }>;
+}
+
+type FilamentDetailData = NonNullable<Awaited<ReturnType<typeof getFilamentDetail>>>;
+type FilamentOffer = FilamentDetailData["offers"][number];
+
+function formatDateTime(value: Date | string) {
+  const date = value instanceof Date ? value : new Date(value);
+  return new Intl.DateTimeFormat("de-DE", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+}
+
+function summarizeOfferHistory(offer: FilamentOffer) {
+  const snapshots = [...offer.snapshots].sort((a, b) => a.scrapedAt.getTime() - b.scrapedAt.getTime());
+  const first = snapshots[0] ?? null;
+  const latest = snapshots[snapshots.length - 1] ?? null;
+  const distinctPrices = [...new Set(snapshots.map((snapshot) => snapshot.priceCents))];
+  const changeCents =
+    first && latest && first.priceCents != null && latest.priceCents != null
+      ? latest.priceCents - first.priceCents
+      : null;
+
+  return {
+    first,
+    latest,
+    distinctPrices,
+    changeCents,
+  };
+}
+
+function buildTimelinePoints(priceHistory: Array<{ priceCents: number; scrapedAt: Date }>) {
+  const dailyLowest = new Map<string, { label: string; priceCents: number; scrapedAt: Date }>();
+
+  for (const entry of priceHistory) {
+    const key = entry.scrapedAt.toISOString().slice(0, 10);
+    const existing = dailyLowest.get(key);
+    if (!existing || entry.priceCents < existing.priceCents) {
+      dailyLowest.set(key, {
+        label: new Intl.DateTimeFormat("de-DE", { day: "numeric", month: "short" }).format(entry.scrapedAt),
+        priceCents: entry.priceCents,
+        scrapedAt: entry.scrapedAt,
+      });
+    }
+  }
+
+  return [...dailyLowest.values()].sort((a, b) => a.scrapedAt.getTime() - b.scrapedAt.getTime());
+}
+
+function buildSparklinePath(points: Array<{ priceCents: number }>) {
+  if (points.length === 0) return "";
+  if (points.length === 1) return "M 6 28 L 114 28";
+
+  const prices = points.map((point) => point.priceCents);
+  const min = Math.min(...prices);
+  const max = Math.max(...prices);
+  const span = Math.max(1, max - min);
+
+  return points
+    .map((point, index) => {
+      const x = 6 + (index * 108) / Math.max(1, points.length - 1);
+      const y = 28 - ((point.priceCents - min) / span) * 20;
+      return `${index === 0 ? "M" : "L"} ${x.toFixed(2)} ${y.toFixed(2)}`;
+    })
+    .join(" ");
+}
+
+export async function generateMetadata({ params }: FilamentPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const data = await getFilamentDetail(slug);
+  if (!data) return {};
+
+  const lowest = data.offers[0];
+
+  return {
+    title: `${data.filament.brand} ${data.filament.series ?? data.filament.material} ${data.filament.colorName ?? ""}`.trim(),
+    description:
+      lowest != null
+        ? `Compare current ${data.filament.brand} offers starting at ${formatCurrency(lowest.latestPriceCents, lowest.latestCurrency || "EUR")}.`
+        : `Tracked price page for ${data.filament.brand} ${data.filament.material}.`,
+    alternates: {
+      canonical: data.filament.canonicalUrl,
+    },
+  };
+}
+
+export default async function FilamentPage({ params }: FilamentPageProps) {
+  const { slug } = await params;
+  const data = await getFilamentDetail(slug);
+  if (!data) notFound();
+
+  const [singleOffers, packOffers] = [
+    data.offers.filter((offer) => offer.packType === "single"),
+    data.offers.filter((offer) => offer.packType !== "single"),
+  ];
+
+  const lowest = data.offers[0] ?? null;
+  const timelinePoints = buildTimelinePoints(
+    data.priceHistory.filter((entry) => entry.priceCents != null) as Array<{ priceCents: number; scrapedAt: Date }>,
+  );
+  const priceSparkline = buildSparklinePath(timelinePoints);
+  const hasMeaningfulPriceMovement = new Set(timelinePoints.map((entry) => entry.priceCents)).size > 1;
+  const offerHistorySummaries = data.offers.map((offer) => ({
+    offer,
+    ...summarizeOfferHistory(offer),
+  }));
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: `${data.filament.brand} ${data.filament.series ?? data.filament.material} ${data.filament.colorName ?? ""}`.trim(),
+    brand: data.filament.brand,
+    color: data.filament.colorName,
+    category: data.filament.material,
+    image: data.filament.imageUrl ? [data.filament.imageUrl] : undefined,
+    sku: data.filament.bambuCode ?? data.filament.ean ?? undefined,
+    offers: data.offers.slice(0, 8).map((offer) => ({
+      "@type": "Offer",
+      priceCurrency: offer.latestCurrency || "EUR",
+      price: offer.latestPriceCents != null ? (offer.latestPriceCents / 100).toFixed(2) : undefined,
+      availability: offer.latestInStock === false
+        ? "https://schema.org/OutOfStock"
+        : "https://schema.org/InStock",
+      url: offer.affiliateUrl,
+      seller: {
+        "@type": "Organization",
+        name: offer.shop.name,
+      },
+    })),
+  };
+
+  return (
+    <SiteShell>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
+      <section className="panel overflow-hidden rounded-[32px] lg:grid lg:grid-cols-[0.95fr_1.05fr]">
+        <div className="min-h-[320px] border-b border-[var(--line)] bg-[var(--surface-strong)] lg:border-b-0 lg:border-r">
+          {data.filament.imageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={data.filament.imageUrl}
+              alt={`${data.filament.brand} ${data.filament.colorName ?? ""}`}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <div
+              className="h-full w-full"
+              style={{
+                background:
+                  data.filament.colorHex
+                    ? `linear-gradient(145deg, ${data.filament.colorHex}, rgba(255,250,240,0.9))`
+                    : "linear-gradient(145deg, rgba(122,135,96,0.78), rgba(255,250,240,0.92))",
+              }}
+            />
+          )}
+        </div>
+        <div className="space-y-6 px-6 py-7 sm:px-8">
+          <div>
+            <p className="eyebrow">Canonical filament</p>
+            <h1 className="mt-3 font-serif text-5xl font-black leading-[0.96] tracking-[-0.06em]">
+              {data.filament.brand}
+              <span className="block">
+                {data.filament.series ?? data.filament.material}
+              </span>
+            </h1>
+            <p className="mt-3 text-lg text-[var(--muted)]">
+              {data.filament.colorName ?? "Color pending"} · {data.filament.material} · {data.filament.weightG}g
+            </p>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-[24px] border border-[var(--line)] bg-white/70 px-4 py-4">
+              <p className="eyebrow">Lowest current price</p>
+              <p className="mt-3 text-3xl font-black tracking-[-0.05em]">
+                {lowest ? formatCurrency(lowest.latestPriceCents, lowest.latestCurrency || "EUR") : "—"}
+              </p>
+            </div>
+            <div className="rounded-[24px] border border-[var(--line)] bg-white/70 px-4 py-4">
+              <p className="eyebrow">Tracked offers</p>
+              <p className="mt-3 text-3xl font-black tracking-[-0.05em]">{data.offers.length}</p>
+            </div>
+            <div className="rounded-[24px] border border-[var(--line)] bg-white/70 px-4 py-4">
+              <p className="eyebrow">Freshness</p>
+              <p className="mt-3 text-3xl font-black tracking-[-0.05em]">
+                {lowest?.freshnessLabel ?? "pending"}
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="mt-6 grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+        <div className="space-y-6">
+          <div>
+            <p className="eyebrow">Single spool offers</p>
+            <h2 className="mt-2 text-3xl font-black tracking-[-0.05em]">Buy exactly this spool</h2>
+          </div>
+          <OfferList offers={singleOffers} />
+
+          <div>
+            <p className="eyebrow">Pack offers</p>
+            <h2 className="mt-2 text-3xl font-black tracking-[-0.05em]">Bulk, sampler, and mixed packs</h2>
+          </div>
+          <OfferList offers={packOffers} />
+        </div>
+
+        <div className="space-y-6">
+          <section className="panel rounded-[28px] px-5 py-5">
+            <p className="eyebrow">Price history</p>
+            <div className="mt-4 space-y-4">
+              {timelinePoints.length > 0 ? (
+                <div className="rounded-[22px] border border-[var(--line)] bg-white/70 px-4 py-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-sm text-[var(--muted)]">Lowest tracked price timeline</p>
+                      <p className="mt-1 text-2xl font-black tracking-[-0.04em]">
+                        {formatCurrency(timelinePoints[timelinePoints.length - 1]?.priceCents ?? null, lowest?.latestCurrency || "EUR")}
+                      </p>
+                    </div>
+                    <p className="max-w-[13rem] text-right text-sm text-[var(--muted)]">
+                      {hasMeaningfulPriceMovement
+                        ? `Tracking since ${formatDateTime(timelinePoints[0].scrapedAt)}`
+                        : `No price change yet since ${formatDateTime(timelinePoints[0].scrapedAt)}`}
+                    </p>
+                  </div>
+
+                  {hasMeaningfulPriceMovement ? (
+                    <div className="mt-4">
+                      <svg viewBox="0 0 120 34" className="h-20 w-full">
+                        <path
+                          d={priceSparkline}
+                          fill="none"
+                          stroke="var(--accent)"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                      <div className="mt-2 flex items-center justify-between text-xs text-[var(--muted)]">
+                        <span>{timelinePoints[0]?.label}</span>
+                        <span>{timelinePoints[timelinePoints.length - 1]?.label}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="mt-3 text-sm text-[var(--muted)]">
+                      The tracker is still building change history here, so we show freshness and current price state instead of repeating the same unchanged number.
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="rounded-[22px] border border-dashed border-[var(--line)] px-4 py-4 text-sm text-[var(--muted)]">
+                  No snapshots recorded yet for this page.
+                </div>
+              )}
+
+              <div className="space-y-3">
+                {offerHistorySummaries.map(({ offer, first, latest, distinctPrices, changeCents }) => (
+                  <div key={offer.id} className="rounded-[22px] border border-[var(--line)] bg-white/70 px-4 py-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="text-sm text-[var(--muted)]">{offer.shop.name}</p>
+                        <p className="font-bold tracking-[-0.02em]">{offer.title}</p>
+                      </div>
+                      <p className="text-lg font-black tracking-[-0.04em]">
+                        {formatCurrency(offer.latestPriceCents, offer.latestCurrency || "EUR")}
+                      </p>
+                    </div>
+                    <div className="mt-3 grid gap-2 text-sm text-[var(--muted)] sm:grid-cols-2">
+                      <p>
+                        {latest ? `Last checked ${formatDateTime(latest.scrapedAt)}` : "Waiting for first snapshot"}
+                      </p>
+                      <p>
+                        {first
+                          ? distinctPrices.length > 1 && changeCents != null
+                            ? `${changeCents < 0 ? "Down" : "Up"} ${formatCurrency(Math.abs(changeCents), offer.latestCurrency || "EUR")} since ${formatDateTime(first.scrapedAt)}`
+                            : `Unchanged since ${formatDateTime(first.scrapedAt)}`
+                          : "No history yet"}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <section>
+            <p className="eyebrow">Related pages</p>
+            <div className="mt-4 grid gap-4">
+              {data.related.map((filament) => (
+                <FilamentCard key={filament.id} filament={filament} />
+              ))}
+            </div>
+          </section>
+        </div>
+      </section>
+    </SiteShell>
+  );
+}

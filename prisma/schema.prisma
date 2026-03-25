@@ -1,0 +1,105 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Filament {
+  id         String      @id @default(uuid())
+  slug       String      @unique
+  brand      String
+  series     String?
+  material   String
+  colorName  String?
+  colorHex   String?
+  colorHexes String[]
+  weightG    Int         @default(1000)
+  diameterMm Float       @default(1.75)
+  ean        String?
+  imageUrl   String?
+  bambuCode  String?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  offerItems OfferItem[]
+
+  @@index([brand])
+  @@index([material])
+  @@index([ean])
+  @@index([bambuCode])
+}
+
+model Shop {
+  id          String   @id
+  name        String
+  market      String   @default("de")
+  baseUrl     String?
+  scraperType String
+  enabled     Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  offers      Offer[]
+}
+
+model Offer {
+  id                    String          @id @default(uuid())
+  slug                  String          @unique
+  shopId                String
+  externalId            String?
+  url                   String
+  affiliateUrl          String?
+  title                 String
+  packType              String          @default("single")
+  spoolCount            Int             @default(1)
+  totalWeightG          Int?
+  imageUrl              String?
+  lastCheckedAt         DateTime?
+  lastSeenAt            DateTime?
+  scrapeStatus          String          @default("pending")
+  sourceConfidence      Float?
+  latestPriceCents      Int?
+  latestCurrency        String?
+  latestPricePerKgCents Int?
+  latestInStock         Boolean?
+  latestScrapedAt       DateTime?
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+  shop                  Shop            @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  items                 OfferItem[]
+  snapshots             PriceSnapshot[]
+
+  @@unique([shopId, externalId])
+  @@index([shopId])
+  @@index([latestPriceCents])
+  @@index([latestScrapedAt])
+}
+
+model OfferItem {
+  id         String   @id @default(uuid())
+  offerId    String
+  filamentId String
+  quantity   Int      @default(1)
+  weightG    Int      @default(1000)
+  colorName  String?
+  colorHex   String?
+  offer      Offer    @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  filament   Filament @relation(fields: [filamentId], references: [id], onDelete: Cascade)
+
+  @@index([offerId])
+  @@index([filamentId])
+}
+
+model PriceSnapshot {
+  id              String   @id @default(uuid())
+  offerId         String
+  priceCents      Int
+  currency        String   @default("EUR")
+  pricePerKgCents Int?
+  inStock         Boolean  @default(true)
+  scrapedAt       DateTime @default(now())
+  offer           Offer    @relation(fields: [offerId], references: [id], onDelete: Cascade)
+
+  @@index([offerId])
+  @@index([scrapedAt])
+}

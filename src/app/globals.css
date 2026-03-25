@@ -1,0 +1,70 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f4efe5;
+  --foreground: #1f221d;
+  --surface: #fffaf0;
+  --surface-strong: #ece1cd;
+  --line: rgba(31, 34, 29, 0.12);
+  --muted: #5a6154;
+  --accent: #c76c2d;
+  --accent-strong: #8f4515;
+  --olive: #7a8760;
+  --shadow: 0 24px 70px rgba(31, 34, 29, 0.08);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-bricolage);
+  --font-serif: var(--font-fraunces);
+  --font-mono: var(--font-plex-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  background-image:
+    radial-gradient(circle at top left, rgba(199, 108, 45, 0.08), transparent 26%),
+    linear-gradient(to bottom, rgba(122, 135, 96, 0.06), transparent 28%);
+}
+
+a {
+  color: inherit;
+}
+
+::selection {
+  background: rgba(199, 108, 45, 0.18);
+}
+
+.shell {
+  width: min(1180px, calc(100vw - 2rem));
+  margin-inline: auto;
+}
+
+.panel {
+  background: linear-gradient(180deg, rgba(255, 250, 240, 0.92), rgba(247, 239, 224, 0.95));
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+}
+
+.eyebrow {
+  font-family: var(--font-plex-mono), monospace;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.accent-chip {
+  border: 1px solid rgba(199, 108, 45, 0.28);
+  background: rgba(199, 108, 45, 0.08);
+  color: var(--accent-strong);
+}
+
+.grid-veil {
+  background-image:
+    linear-gradient(rgba(31, 34, 29, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(31, 34, 29, 0.04) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
