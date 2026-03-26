@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
-import { getTranslations, setRequestLocale } from "next-intl/server";
-import { hasLocale } from "next-intl";
+import { getTranslations, setRequestLocale, getMessages } from "next-intl/server";
+import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { routing } from "@/i18n/routing";
 import { SITE_URL } from "@/lib/env";
 import "../globals.css";
@@ -61,11 +61,14 @@ export default async function LocaleLayout({
   const { locale } = await params;
   if (!hasLocale(routing.locales, locale)) notFound();
   setRequestLocale(locale);
+  const messages = await getMessages();
 
   return (
     <html lang={locale} className="h-full antialiased">
       <body className="min-h-full bg-background text-foreground font-sans">
-        {children}
+        <NextIntlClientProvider messages={messages}>
+          {children}
+        </NextIntlClientProvider>
       </body>
     </html>
   );
