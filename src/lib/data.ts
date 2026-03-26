@@ -592,8 +592,8 @@ export async function getFilamentDetail(idOrSlug: string) {
   const serializedOffers = offers.map(serializeOffer);
   const relatedBestOffers = await getBestOffersForFilamentIds(related.map((entry) => entry.id));
 
-  // Collect all unique images: filament canonical + offer images (deduped by base URL)
-  const allImages = collectUniqueImages(filament.imageUrl, serializedOffers);
+  // Collect all unique images: filament canonical + color-matched offer images (deduped)
+  const allImages = collectUniqueImages(filament, serializedOffers);
 
   return {
     filament: {
@@ -622,16 +622,15 @@ export async function getFilamentDetail(idOrSlug: string) {
   };
 }
 
-/** Collect unique images from filament + offers, deduplicating scaled variants */
+/** Collect unique images from filament + color-matched offers, deduplicating scaled variants */
 function collectUniqueImages(
-  filamentImageUrl: string | null,
-  offers: Array<{ imageUrl: string | null }>,
+  filament: { imageUrl: string | null; colorName: string | null; series: string | null; material: string },
+  offers: Array<{ imageUrl: string | null; title: string }>,
 ): string[] {
   const urls: string[] = [];
   const seenBases = new Set<string>();
 
   function normalizeForDedup(url: string): string {
-    // Strip common size/scale suffixes and query params to detect duplicates
     return url
       .replace(/[?#].*$/, "")
       .replace(/-(?:mix-\d+|thumb|small|medium|large|full|\d+x\d+)(?=\.\w+$)/, "")
@@ -647,12 +646,30 @@ function collectUniqueImages(
     urls.push(url);
   }
 
-  // Filament canonical image first
-  addImage(filamentImageUrl);
+  /** Check if an offer title is a plausible color match for this filament */
+  function isColorRelevant(offerTitle: string): boolean {
+    if (!filament.colorName) return true; // can't verify, allow it
 
-  // Offer images
+    const normalizedTitle = normalizeComparable(offerTitle);
+    const colorTokens = normalizeComparable(filament.colorName)
+      .split(" ")
+      .filter((t) => t.length > 2);
+
+    // If the filament has a specific color name, the offer title should contain it
+    // (or at least most of its distinctive tokens)
+    if (colorTokens.length === 0) return true;
+    const matched = colorTokens.filter((token) => normalizedTitle.includes(token));
+    return matched.length >= Math.max(1, Math.ceil(colorTokens.length * 0.5));
+  }
+
+  // Filament canonical image first
+  addImage(filament.imageUrl);
+
+  // Only include images from offers that match this filament's color
   for (const offer of offers) {
-    addImage(offer.imageUrl);
+    if (offer.imageUrl && isColorRelevant(offer.title)) {
+      addImage(offer.imageUrl);
+    }
   }
 
   return urls;
