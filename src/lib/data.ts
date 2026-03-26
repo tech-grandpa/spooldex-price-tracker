@@ -479,13 +479,16 @@ export async function getMaterialsIndexPageData() {
 }
 
 export async function getMaterialPageData(materialSlug: string) {
+  const spaced = materialSlug.replaceAll("-", " ");
+  const hyphenated = materialSlug.toUpperCase(); // PA12-CF, PETG-CF, etc.
+
   const [filaments, materials] = await Promise.all([
     prisma.filament.findMany({
       where: {
-        material: {
-          contains: materialSlug.replaceAll("-", " "),
-          mode: "insensitive",
-        },
+        OR: [
+          { material: { equals: hyphenated, mode: "insensitive" } },
+          { material: { contains: spaced, mode: "insensitive" } },
+        ],
       },
       orderBy: [{ brand: "asc" }, { colorName: "asc" }],
     }),
