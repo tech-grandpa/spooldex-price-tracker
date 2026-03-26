@@ -33,12 +33,7 @@ function summarizeOfferHistory(offer: FilamentOffer) {
       ? latest.priceCents - first.priceCents
       : null;
 
-  return {
-    first,
-    latest,
-    distinctPrices,
-    changeCents,
-  };
+  return { first, latest, distinctPrices, changeCents };
 }
 
 function buildTimelinePoints(priceHistory: Array<{ priceCents: number; scrapedAt: Date }>) {
@@ -147,8 +142,8 @@ export default async function FilamentPage({ params }: FilamentPageProps) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      <section className="panel overflow-hidden rounded-[32px] lg:grid lg:grid-cols-[0.95fr_1.05fr]">
-        <div className="min-h-[320px] border-b border-[var(--line)] bg-[var(--surface-strong)] lg:border-b-0 lg:border-r">
+      <section className="overflow-hidden rounded-xl border border-border bg-card lg:grid lg:grid-cols-[0.95fr_1.05fr]">
+        <div className="min-h-[320px] border-b border-border bg-secondary lg:border-b-0 lg:border-r">
           {data.filament.imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -162,40 +157,40 @@ export default async function FilamentPage({ params }: FilamentPageProps) {
               style={{
                 background:
                   data.filament.colorHex
-                    ? `linear-gradient(145deg, ${data.filament.colorHex}, rgba(255,250,240,0.9))`
-                    : "linear-gradient(145deg, rgba(122,135,96,0.78), rgba(255,250,240,0.92))",
+                    ? `linear-gradient(145deg, ${data.filament.colorHex}, rgba(250,250,250,0.9))`
+                    : "linear-gradient(145deg, rgba(12,133,122,0.15), rgba(250,250,250,0.95))",
               }}
             />
           )}
         </div>
         <div className="space-y-6 px-6 py-7 sm:px-8">
           <div>
-            <p className="eyebrow">Canonical filament</p>
-            <h1 className="mt-3 font-serif text-5xl font-black leading-[0.96] tracking-[-0.06em]">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Canonical filament</p>
+            <h1 className="mt-3 text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
               {data.filament.brand}
               <span className="block">
                 {data.filament.series ?? data.filament.material}
               </span>
             </h1>
-            <p className="mt-3 text-lg text-[var(--muted)]">
+            <p className="mt-3 text-base text-muted-foreground">
               {data.filament.colorName ?? "Color pending"} · {data.filament.material} · {data.filament.weightG}g
             </p>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-[24px] border border-[var(--line)] bg-white/70 px-4 py-4">
-              <p className="eyebrow">Lowest current price</p>
-              <p className="mt-3 text-3xl font-black tracking-[-0.05em]">
+            <div className="rounded-lg border border-border bg-background px-4 py-4">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Lowest current price</p>
+              <p className="mt-2 text-2xl font-bold tabular-nums tracking-tight">
                 {lowest ? formatCurrency(lowest.latestPriceCents, lowest.latestCurrency || "EUR") : "—"}
               </p>
             </div>
-            <div className="rounded-[24px] border border-[var(--line)] bg-white/70 px-4 py-4">
-              <p className="eyebrow">Tracked offers</p>
-              <p className="mt-3 text-3xl font-black tracking-[-0.05em]">{data.offers.length}</p>
+            <div className="rounded-lg border border-border bg-background px-4 py-4">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Tracked offers</p>
+              <p className="mt-2 text-2xl font-bold tabular-nums tracking-tight">{data.offers.length}</p>
             </div>
-            <div className="rounded-[24px] border border-[var(--line)] bg-white/70 px-4 py-4">
-              <p className="eyebrow">Freshness</p>
-              <p className="mt-3 text-3xl font-black tracking-[-0.05em]">
+            <div className="rounded-lg border border-border bg-background px-4 py-4">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Freshness</p>
+              <p className="mt-2 text-2xl font-bold tracking-tight">
                 {lowest?.freshnessLabel ?? "pending"}
               </p>
             </div>
@@ -203,35 +198,35 @@ export default async function FilamentPage({ params }: FilamentPageProps) {
         </div>
       </section>
 
-      <section className="mt-6 grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+      <section className="mt-8 grid gap-8 xl:grid-cols-[1.1fr_0.9fr]">
         <div className="space-y-6">
           <div>
-            <p className="eyebrow">Single spool offers</p>
-            <h2 className="mt-2 text-3xl font-black tracking-[-0.05em]">Buy exactly this spool</h2>
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Single spool offers</p>
+            <h2 className="mt-1 text-2xl font-bold tracking-tight">Buy exactly this spool</h2>
           </div>
           <OfferList offers={singleOffers} />
 
           <div>
-            <p className="eyebrow">Pack offers</p>
-            <h2 className="mt-2 text-3xl font-black tracking-[-0.05em]">Bulk, sampler, and mixed packs</h2>
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Pack offers</p>
+            <h2 className="mt-1 text-2xl font-bold tracking-tight">Bulk, sampler, and mixed packs</h2>
           </div>
           <OfferList offers={packOffers} />
         </div>
 
         <div className="space-y-6">
-          <section className="panel rounded-[28px] px-5 py-5">
-            <p className="eyebrow">Price history</p>
+          <section className="rounded-xl border border-border bg-card px-5 py-5">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Price history</p>
             <div className="mt-4 space-y-4">
               {timelinePoints.length > 0 ? (
-                <div className="rounded-[22px] border border-[var(--line)] bg-white/70 px-4 py-4">
+                <div className="rounded-lg border border-border bg-background px-4 py-4">
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <p className="text-sm text-[var(--muted)]">Lowest tracked price timeline</p>
-                      <p className="mt-1 text-2xl font-black tracking-[-0.04em]">
+                      <p className="text-sm text-muted-foreground">Lowest tracked price timeline</p>
+                      <p className="mt-1 text-2xl font-bold tabular-nums tracking-tight">
                         {formatCurrency(timelinePoints[timelinePoints.length - 1]?.priceCents ?? null, lowest?.latestCurrency || "EUR")}
                       </p>
                     </div>
-                    <p className="max-w-[13rem] text-right text-sm text-[var(--muted)]">
+                    <p className="max-w-[13rem] text-right text-sm text-muted-foreground">
                       {hasMeaningfulPriceMovement
                         ? `Tracking since ${formatDateTime(timelinePoints[0].scrapedAt)}`
                         : `No price change yet since ${formatDateTime(timelinePoints[0].scrapedAt)}`}
@@ -244,42 +239,42 @@ export default async function FilamentPage({ params }: FilamentPageProps) {
                         <path
                           d={priceSparkline}
                           fill="none"
-                          stroke="var(--accent)"
+                          stroke="var(--primary)"
                           strokeWidth="2.5"
                           strokeLinecap="round"
                           strokeLinejoin="round"
                         />
                       </svg>
-                      <div className="mt-2 flex items-center justify-between text-xs text-[var(--muted)]">
+                      <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
                         <span>{timelinePoints[0]?.label}</span>
                         <span>{timelinePoints[timelinePoints.length - 1]?.label}</span>
                       </div>
                     </div>
                   ) : (
-                    <p className="mt-3 text-sm text-[var(--muted)]">
+                    <p className="mt-3 text-sm text-muted-foreground">
                       The tracker is still building change history here, so we show freshness and current price state instead of repeating the same unchanged number.
                     </p>
                   )}
                 </div>
               ) : (
-                <div className="rounded-[22px] border border-dashed border-[var(--line)] px-4 py-4 text-sm text-[var(--muted)]">
+                <div className="rounded-lg border border-dashed border-border px-4 py-4 text-sm text-muted-foreground">
                   No snapshots recorded yet for this page.
                 </div>
               )}
 
               <div className="space-y-3">
                 {offerHistorySummaries.map(({ offer, first, latest, distinctPrices, changeCents }) => (
-                  <div key={offer.id} className="rounded-[22px] border border-[var(--line)] bg-white/70 px-4 py-4">
+                  <div key={offer.id} className="rounded-lg border border-border bg-background px-4 py-4">
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <p className="text-sm text-[var(--muted)]">{offer.shop.name}</p>
-                        <p className="font-bold tracking-[-0.02em]">{offer.title}</p>
+                        <p className="text-sm text-muted-foreground">{offer.shop.name}</p>
+                        <p className="font-semibold tracking-tight">{offer.title}</p>
                       </div>
-                      <p className="text-lg font-black tracking-[-0.04em]">
+                      <p className="text-lg font-semibold tabular-nums">
                         {formatCurrency(offer.latestPriceCents, offer.latestCurrency || "EUR")}
                       </p>
                     </div>
-                    <div className="mt-3 grid gap-2 text-sm text-[var(--muted)] sm:grid-cols-2">
+                    <div className="mt-3 grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
                       <p>
                         {latest ? `Last checked ${formatDateTime(latest.scrapedAt)}` : "Waiting for first snapshot"}
                       </p>
@@ -298,7 +293,7 @@ export default async function FilamentPage({ params }: FilamentPageProps) {
           </section>
 
           <section>
-            <p className="eyebrow">Related pages</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Related pages</p>
             <div className="mt-4 grid gap-4">
               {data.related.map((filament) => (
                 <FilamentCard key={filament.id} filament={filament} />

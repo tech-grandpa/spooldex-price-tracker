@@ -28,10 +28,10 @@ export default async function BrandPage({ params }: BrandPageProps) {
 
   return (
     <SiteShell>
-      <section className="panel rounded-[30px] px-6 py-7">
-        <p className="eyebrow">Brand page</p>
-        <h1 className="mt-3 text-4xl font-black tracking-[-0.05em]">{data.brand}</h1>
-        <p className="mt-2 max-w-2xl text-[var(--muted)]">
+      <section className="rounded-xl border border-border bg-card rounded-[30px] px-6 py-7">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Brand page</p>
+        <h1 className="mt-3 text-2xl font-bold tracking-tight">{data.brand}</h1>
+        <p className="mt-2 max-w-2xl text-muted-foreground">
           Crawlable offer pages for {data.brand}, grouped into one place so users can compare materials and colors without bouncing between shop search pages.
         </p>
       </section>

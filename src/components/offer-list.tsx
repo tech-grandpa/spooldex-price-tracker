@@ -25,57 +25,57 @@ interface OfferListProps {
 export function OfferList({ offers, mode = "shop-first" }: OfferListProps) {
   if (offers.length === 0) {
     return (
-      <div className="panel rounded-[24px] px-5 py-6 text-sm text-[var(--muted)]">
+      <div className="rounded-xl border border-border bg-card px-5 py-6 text-sm text-muted-foreground">
         No tracked offers yet for this filament.
       </div>
     );
   }
 
   return (
-    <div className="panel overflow-hidden rounded-[24px]">
-      <div className="grid grid-cols-[1.5fr_0.8fr_1fr] gap-3 border-b border-[var(--line)] px-5 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
+    <div className="overflow-hidden rounded-xl border border-border bg-card">
+      <div className="grid grid-cols-[1.5fr_0.8fr_1fr] gap-3 border-b border-border bg-secondary/50 px-5 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
         <span>Offer</span>
         <span>Price</span>
         <span>{mode === "detail-first" ? "Freshness & links" : "Freshness & shop"}</span>
       </div>
-      <div className="divide-y divide-[var(--line)]">
+      <div className="divide-y divide-border">
         {offers.map((offer) => (
           <div
             key={offer.id}
-            className="grid grid-cols-[1.5fr_0.8fr_1fr] gap-3 px-5 py-4 transition-colors hover:bg-white/60"
+            className="grid grid-cols-[1.5fr_0.8fr_1fr] gap-3 px-5 py-4 transition-colors hover:bg-accent/50"
           >
             <div>
-              <p className="text-sm text-[var(--muted)]">{offer.shop.name}</p>
+              <p className="text-sm text-muted-foreground">{offer.shop.name}</p>
               {mode === "detail-first" && offer.detailHref ? (
-                <Link href={offer.detailHref} className="font-bold tracking-[-0.02em] hover:text-[var(--accent-strong)]">
+                <Link href={offer.detailHref} className="font-semibold tracking-tight hover:text-primary">
                   {offer.title}
                 </Link>
               ) : (
-                <p className="font-bold tracking-[-0.02em]">{offer.title}</p>
+                <p className="font-semibold tracking-tight">{offer.title}</p>
               )}
-              <p className="mt-1 text-sm text-[var(--muted)]">
+              <p className="mt-1 text-sm text-muted-foreground">
                 {packTypeLabel(offer.packType)}
                 {offer.spoolCount > 1 ? ` · ${offer.spoolCount} spools` : ""}
                 {offer.latestInStock === false ? " · currently out of stock" : ""}
               </p>
             </div>
             <div className="space-y-1">
-              <p className="text-lg font-black tracking-[-0.04em]">
+              <p className="text-lg font-semibold tabular-nums">
                 {formatCurrency(offer.latestPriceCents, offer.latestCurrency || "EUR")}
               </p>
-              <p className="text-sm text-[var(--muted)]">
+              <p className="text-sm text-muted-foreground">
                 {offer.latestPricePerKgCents != null
                   ? `${formatCurrency(offer.latestPricePerKgCents, offer.latestCurrency || "EUR")}/kg`
                   : "per-kg pending"}
               </p>
             </div>
-            <div className="space-y-3 text-sm text-[var(--muted)]">
+            <div className="space-y-3 text-sm text-muted-foreground">
               <p>{offer.freshnessLabel}</p>
               <div className="flex flex-wrap gap-2">
                 {mode === "detail-first" && offer.detailHref && (
                   <Link
                     href={offer.detailHref}
-                    className="rounded-full border border-[var(--line)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--foreground)] transition-colors hover:bg-[var(--surface)]"
+                    className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-secondary"
                   >
                     Details
                   </Link>
@@ -84,7 +84,7 @@ export function OfferList({ offers, mode = "shop-first" }: OfferListProps) {
                   href={offer.affiliateUrl}
                   target="_blank"
                   rel="noopener noreferrer sponsored"
-                  className="rounded-full border border-[rgba(199,108,45,0.28)] bg-[rgba(199,108,45,0.08)] px-3 py-1.5 text-xs font-semibold text-[var(--accent-strong)] transition-colors hover:bg-[rgba(199,108,45,0.14)]"
+                  className="rounded-lg border border-primary/20 bg-primary-light px-3 py-1.5 text-xs font-semibold text-accent-foreground transition-colors hover:bg-primary/10"
                 >
                   Go to shop
                 </a>

@@ -1,23 +1,6 @@
 import type { Metadata, Viewport } from "next";
-import { Bricolage_Grotesque, Fraunces, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import { SITE_URL } from "@/lib/env";
-
-const bricolage = Bricolage_Grotesque({
-  variable: "--font-bricolage",
-  subsets: ["latin"],
-});
-
-const fraunces = Fraunces({
-  variable: "--font-fraunces",
-  subsets: ["latin"],
-});
-
-const mono = IBM_Plex_Mono({
-  variable: "--font-plex-mono",
-  subsets: ["latin"],
-  weight: ["400", "500"],
-});
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -43,7 +26,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#c76c2d",
+  themeColor: "#0C857A",
 };
 
 export default function RootLayout({
@@ -52,10 +35,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${bricolage.variable} ${fraunces.variable} ${mono.variable} h-full antialiased`}
-    >
+    <html lang="en" className="h-full antialiased">
       <body className="min-h-full bg-background text-foreground font-sans">{children}</body>
     </html>
   );

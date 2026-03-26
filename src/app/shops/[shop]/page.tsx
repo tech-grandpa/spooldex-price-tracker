@@ -36,10 +36,10 @@ export default async function ShopPage({ params }: ShopPageProps) {
 
   return (
     <SiteShell activeHref="/shops">
-      <section className="panel rounded-[30px] px-6 py-7">
-        <p className="eyebrow">Retailer page</p>
-        <h1 className="mt-3 text-4xl font-black tracking-[-0.05em]">{data.shop.name}</h1>
-        <p className="mt-2 max-w-2xl text-[var(--muted)]">
+      <section className="rounded-xl border border-border bg-card rounded-[30px] px-6 py-7">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Retailer page</p>
+        <h1 className="mt-3 text-2xl font-bold tracking-tight">{data.shop.name}</h1>
+        <p className="mt-2 max-w-2xl text-muted-foreground">
           Offer freshness and landing pages from {data.shop.name}, refreshed by the tracker worker and surfaced for public discovery.
         </p>
 
@@ -50,9 +50,9 @@ export default async function ShopPage({ params }: ShopPageProps) {
             { label: "Pack offers", value: data.stats.packOfferCount },
             { label: "Freshness", value: data.stats.freshnessLabel },
           ].map((item) => (
-            <div key={item.label} className="rounded-[22px] border border-[var(--line)] bg-white/70 px-4 py-4">
-              <p className="eyebrow">{item.label}</p>
-              <p className="mt-3 text-2xl font-black tracking-[-0.05em]">{item.value}</p>
+            <div key={item.label} className="rounded-lg border border-border bg-background px-4 py-4">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{item.label}</p>
+              <p className="mt-3 text-2xl font-bold tracking-tight">{item.value}</p>
             </div>
           ))}
         </div>
@@ -60,16 +60,16 @@ export default async function ShopPage({ params }: ShopPageProps) {
 
       <section className="mt-6 space-y-6">
         <div>
-          <p className="eyebrow">Single spool offers</p>
-          <h2 className="mt-2 text-3xl font-black tracking-[-0.05em]">Details first, shop second</h2>
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Single spool offers</p>
+          <h2 className="mt-2 text-2xl font-bold tracking-tight">Details first, shop second</h2>
           <div className="mt-4">
             <OfferList offers={singleOffers} mode="detail-first" />
           </div>
         </div>
 
         <div>
-          <p className="eyebrow">Pack offers</p>
-          <h2 className="mt-2 text-3xl font-black tracking-[-0.05em]">Multipacks, sampler sets, and bundles</h2>
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Pack offers</p>
+          <h2 className="mt-2 text-2xl font-bold tracking-tight">Multipacks, sampler sets, and bundles</h2>
           <div className="mt-4">
             <OfferList offers={packOffers} mode="detail-first" />
           </div>

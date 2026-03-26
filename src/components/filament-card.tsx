@@ -31,9 +31,9 @@ export function FilamentCard({ filament }: FilamentCardProps) {
   return (
     <Link
       href={`/filaments/${filament.slug}`}
-      className="panel group overflow-hidden rounded-[24px] transition-transform duration-200 hover:-translate-y-0.5"
+      className="group overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-shadow duration-200 hover:shadow-md"
     >
-      <div className="relative h-44 overflow-hidden border-b border-[var(--line)] bg-[var(--surface-strong)]">
+      <div className="relative h-44 overflow-hidden border-b border-border bg-secondary">
         {imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -48,38 +48,38 @@ export function FilamentCard({ filament }: FilamentCardProps) {
               background:
                 filament.colorHex
                   ? `linear-gradient(140deg, ${filament.colorHex}, rgba(255,255,255,0.75))`
-                  : "linear-gradient(140deg, rgba(122,135,96,0.7), rgba(255,250,240,0.95))",
+                  : "linear-gradient(140deg, rgba(12,133,122,0.15), rgba(250,250,250,0.95))",
             }}
           />
         )}
         <div className="absolute left-3 top-3">
-          <span className="accent-chip rounded-full px-3 py-1 text-xs font-semibold">
+          <span className="rounded-full border border-primary/20 bg-primary-light px-2.5 py-0.5 text-xs font-semibold text-accent-foreground">
             {filament.material}
           </span>
         </div>
       </div>
       <div className="space-y-3 px-4 py-4">
         <div>
-          <p className="text-sm text-[var(--muted)]">{filament.brand}</p>
-          <h3 className="text-lg font-black tracking-[-0.03em]">
+          <p className="text-sm text-muted-foreground">{filament.brand}</p>
+          <h3 className="text-base font-semibold tracking-tight">
             {filament.series ?? filament.material}
           </h3>
-          <p className="text-sm text-[var(--muted)]">
+          <p className="text-sm text-muted-foreground">
             {filament.colorName ?? "Color pending"} · {filament.weightG}g
           </p>
         </div>
         <div className="flex items-center justify-between gap-3 text-sm">
-          <span className="rounded-full bg-[rgba(31,34,29,0.06)] px-3 py-1 font-medium text-[var(--muted)]">
+          <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-medium text-muted-foreground">
             {filament.bestOffer
               ? filament.bestOffer.packType === "single"
                 ? `${filament.bestOffer.shop.name} · ${filament.bestOffer.freshnessLabel}`
                 : `${filament.bestOffer.spoolCount}x pack · ${filament.bestOffer.shop.name}`
               : "Live tracker page"}
           </span>
-          <span className="font-black tracking-[-0.03em]">
+          <span className="font-semibold tabular-nums">
             {filament.bestOffer?.latestPriceCents != null
               ? formatCurrency(filament.bestOffer.latestPriceCents, filament.bestOffer.latestCurrency || "EUR")
-              : "No live offer"}
+              : "—"}
           </span>
         </div>
       </div>

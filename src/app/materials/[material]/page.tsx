@@ -28,10 +28,10 @@ export default async function MaterialPage({ params }: MaterialPageProps) {
 
   return (
     <SiteShell activeHref="/materials">
-      <section className="panel rounded-[30px] px-6 py-7">
-        <p className="eyebrow">Material page</p>
-        <h1 className="mt-3 text-4xl font-black tracking-[-0.05em]">{data.material}</h1>
-        <p className="mt-2 max-w-2xl text-[var(--muted)]">
+      <section className="rounded-xl border border-border bg-card rounded-[30px] px-6 py-7">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Material page</p>
+        <h1 className="mt-3 text-2xl font-bold tracking-tight">{data.material}</h1>
+        <p className="mt-2 max-w-2xl text-muted-foreground">
           Public comparison pages for {data.material} offers, designed to rank and to help users understand current single-spool and pack pricing.
         </p>
 
@@ -43,7 +43,7 @@ export default async function MaterialPage({ params }: MaterialPageProps) {
               className={`rounded-full px-3 py-2 text-sm font-semibold transition-colors ${
                 entry.name === data.material
                   ? "bg-[var(--foreground)] text-[#fffaf0]"
-                  : "bg-white/70 text-[var(--muted)] hover:bg-white hover:text-[var(--foreground)]"
+                  : "bg-background text-muted-foreground hover:bg-white hover:text-[var(--foreground)]"
               }`}
             >
               {entry.name}

@@ -1,32 +1,67 @@
 @import "tailwindcss";
 
+/* ─── Swiss Teal Design System (aligned with Spooldex) ─── */
 :root {
-  --background: #f4efe5;
-  --foreground: #1f221d;
-  --surface: #fffaf0;
-  --surface-strong: #ece1cd;
-  --line: rgba(31, 34, 29, 0.12);
-  --muted: #5a6154;
-  --accent: #c76c2d;
-  --accent-strong: #8f4515;
-  --olive: #7a8760;
-  --shadow: 0 24px 70px rgba(31, 34, 29, 0.08);
+  --primary: #0C857A;
+  --primary-hover: #0B786E;
+  --primary-light: #CCFBF1;
+  --primary-foreground: #FFFFFF;
+
+  --background: #FAFAFA;
+  --foreground: #1A1A1A;
+
+  --card: #FFFFFF;
+  --card-foreground: #1A1A1A;
+
+  --secondary: #F3F4F6;
+  --secondary-foreground: #1F2937;
+
+  --muted: #F3F4F6;
+  --muted-foreground: #5B6370;
+
+  --accent: #F0FDFA;
+  --accent-foreground: #0B786E;
+
+  --border: #E5E7EB;
+  --ring: #0D9488;
+
+  --radius: 0.75rem;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
 }
 
 @theme inline {
+  --font-sans: "Albert Sans", system-ui, -apple-system, sans-serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-bricolage);
-  --font-serif: var(--font-fraunces);
-  --font-mono: var(--font-plex-mono);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-light: var(--primary-light);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  background-image:
-    radial-gradient(circle at top left, rgba(199, 108, 45, 0.08), transparent 26%),
-    linear-gradient(to bottom, rgba(122, 135, 96, 0.06), transparent 28%);
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
 }
 
 a {
@@ -34,37 +69,5 @@ a {
 }
 
 ::selection {
-  background: rgba(199, 108, 45, 0.18);
-}
-
-.shell {
-  width: min(1180px, calc(100vw - 2rem));
-  margin-inline: auto;
-}
-
-.panel {
-  background: linear-gradient(180deg, rgba(255, 250, 240, 0.92), rgba(247, 239, 224, 0.95));
-  border: 1px solid var(--line);
-  box-shadow: var(--shadow);
-}
-
-.eyebrow {
-  font-family: var(--font-plex-mono), monospace;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--muted);
-  font-size: 0.72rem;
-}
-
-.accent-chip {
-  border: 1px solid rgba(199, 108, 45, 0.28);
-  background: rgba(199, 108, 45, 0.08);
-  color: var(--accent-strong);
-}
-
-.grid-veil {
-  background-image:
-    linear-gradient(rgba(31, 34, 29, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(31, 34, 29, 0.04) 1px, transparent 1px);
-  background-size: 18px 18px;
+  background: rgba(12, 133, 122, 0.15);
 }

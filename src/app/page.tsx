@@ -15,36 +15,38 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
   return (
     <SiteShell activeHref="/">
-      <section className="panel grid overflow-hidden rounded-[32px] lg:grid-cols-[1.2fr_0.8fr]">
+      <section className="grid overflow-hidden rounded-xl border border-border bg-card lg:grid-cols-[1.2fr_0.8fr]">
         <div className="space-y-6 px-6 py-8 sm:px-8">
-          <p className="eyebrow">Public crawlable catalog · DE market first</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Public crawlable catalog · DE market first
+          </p>
           <div className="max-w-3xl space-y-4">
-            <h1 className="font-serif text-5xl font-black leading-[0.92] tracking-[-0.06em] sm:text-6xl">
+            <h1 className="text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
               Compare filament offers without waiting for marketplaces to approve you first.
             </h1>
-            <p className="max-w-2xl text-lg leading-8 text-[var(--muted)]">
+            <p className="max-w-2xl text-base leading-7 text-muted-foreground">
               Spooldex Tracker starts with open shop coverage, freshness timestamps, and public landing pages that can rank. Phase 1 is about discovery and trust, not gated affiliate APIs.
             </p>
           </div>
 
-          <form className="flex flex-col gap-3 rounded-[28px] border border-[var(--line)] bg-white/70 p-4 sm:flex-row">
+          <form className="flex flex-col gap-3 sm:flex-row">
             <input
               type="search"
               name="q"
               defaultValue={q}
-              placeholder="Search Bambu PLA Basic, Prusament PETG, eSUN white..."
-              className="h-14 flex-1 rounded-2xl border border-[var(--line)] bg-[var(--surface)] px-4 text-base outline-none ring-0 placeholder:text-[var(--muted)]"
+              placeholder="Search Bambu PLA Basic, Prusament PETG..."
+              className="h-11 flex-1 rounded-lg border border-border bg-background px-4 text-sm outline-none ring-0 placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-ring"
             />
             <button
               type="submit"
-              className="h-14 rounded-2xl bg-[var(--foreground)] px-6 text-sm font-bold uppercase tracking-[0.16em] text-[var(--surface)]"
+              className="h-11 rounded-lg bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover"
             >
               Search live catalog
             </button>
           </form>
         </div>
 
-        <div className="border-t border-[var(--line)] bg-[rgba(31,34,29,0.04)] px-6 py-8 lg:border-l lg:border-t-0">
+        <div className="border-t border-border bg-secondary/30 px-6 py-8 lg:border-l lg:border-t-0">
           <div className="grid gap-3 sm:grid-cols-2">
             {[
               { label: "Tracked filaments", value: data.stats.filamentCount },
@@ -52,26 +54,26 @@ export default async function HomePage({ searchParams }: HomePageProps) {
               { label: "Active shops", value: data.stats.shopCount },
               { label: "Live offers", value: data.stats.offerCount },
             ].map((item) => (
-              <div key={item.label} className="rounded-[24px] border border-[var(--line)] bg-white/70 px-4 py-4">
-                <p className="eyebrow">{item.label}</p>
-                <p className="mt-3 text-4xl font-black tracking-[-0.06em]">{item.value}</p>
+              <div key={item.label} className="rounded-lg border border-border bg-card px-4 py-4">
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{item.label}</p>
+                <p className="mt-2 text-3xl font-bold tabular-nums tracking-tight">{item.value}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="mt-6 grid gap-6 lg:grid-cols-[1fr_0.9fr]">
+      <section className="mt-8 grid gap-8 lg:grid-cols-[1fr_0.9fr]">
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="eyebrow">Filament index</p>
-              <h2 className="mt-2 text-3xl font-black tracking-[-0.05em]">
-                {q ? `Search results for “${q}”` : "Fresh canonical pages"}
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Filament index</p>
+              <h2 className="mt-1 text-2xl font-bold tracking-tight">
+                {q ? `Search results for "${q}"` : "Fresh canonical pages"}
               </h2>
             </div>
             {!q && (
-              <Link href="/materials" className="text-sm font-semibold text-[var(--accent-strong)]">
+              <Link href="/materials" className="text-sm font-semibold text-primary hover:text-primary-hover">
                 Browse materials
               </Link>
             )}
@@ -84,32 +86,32 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         </div>
 
         <div className="space-y-6">
-          <section className="panel rounded-[28px] px-5 py-5">
-            <p className="eyebrow">Active retailers</p>
+          <section className="rounded-xl border border-border bg-card px-5 py-5">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Active retailers</p>
             <div className="mt-4 flex flex-wrap gap-2">
               {data.shops.map((shop) => (
                 <Link
                   key={shop.id}
                   href={`/shops/${shop.id}`}
-                  className="accent-chip rounded-full px-3 py-2 text-sm font-semibold"
+                  className="rounded-full border border-primary/20 bg-primary-light px-3 py-1.5 text-sm font-semibold text-accent-foreground transition-colors hover:bg-primary/10"
                 >
                   {shop.name} · {shop.offerCount}
                 </Link>
               ))}
             </div>
-            <Link href="/shops" className="mt-4 inline-flex text-sm font-semibold text-[var(--accent-strong)]">
+            <Link href="/shops" className="mt-4 inline-flex text-sm font-semibold text-primary hover:text-primary-hover">
               Open shop coverage
             </Link>
           </section>
 
-          <section className="panel rounded-[28px] px-5 py-5">
-            <p className="eyebrow">Popular materials</p>
+          <section className="rounded-xl border border-border bg-card px-5 py-5">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Popular materials</p>
             <div className="mt-4 flex flex-wrap gap-2">
               {data.materials.slice(0, 12).map((material) => (
                 <Link
                   key={material.slug}
                   href={`/materials/${material.slug}`}
-                  className="rounded-full bg-white/70 px-3 py-2 text-sm font-semibold text-[var(--muted)]"
+                  className="rounded-full bg-secondary px-3 py-1.5 text-sm font-medium text-secondary-foreground transition-colors hover:bg-secondary/80"
                 >
                   {material.name}
                 </Link>
@@ -117,18 +119,18 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             </div>
           </section>
 
-          <section className="panel rounded-[28px] px-5 py-5">
-            <p className="eyebrow">Recently refreshed offers</p>
-            <div className="mt-4 space-y-3">
+          <section className="rounded-xl border border-border bg-card px-5 py-5">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Recently refreshed offers</p>
+            <div className="mt-4 space-y-2">
               {data.recentOffers.map((offer) => (
                 <a
                   key={offer.id}
                   href={`/filaments/${offer.items[0]?.filament.slug ?? ""}`}
-                  className="block rounded-[22px] border border-[var(--line)] bg-white/70 px-4 py-3 transition-colors hover:bg-white"
+                  className="block rounded-lg border border-border bg-background px-4 py-3 transition-colors hover:bg-accent/50"
                 >
-                  <p className="text-sm text-[var(--muted)]">{offer.shop.name}</p>
-                  <p className="font-bold tracking-[-0.02em]">{offer.title}</p>
-                  <p className="mt-1 text-sm text-[var(--muted)]">{offer.freshnessLabel}</p>
+                  <p className="text-xs font-medium text-muted-foreground">{offer.shop.name}</p>
+                  <p className="font-semibold tracking-tight">{offer.title}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{offer.freshnessLabel}</p>
                 </a>
               ))}
             </div>
