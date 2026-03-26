@@ -46,8 +46,9 @@ function scoreCandidate(query: string, filament: ScrapeFilamentInput, candidate:
   }
 
   score += matchedColorTokens.length * 2;
-  if (colorTokens.length > 0 && matchedColorTokens.length === 0) {
-    score -= 6;
+  if (colorTokens.length > 0 && matchedColorTokens.length < colorTokens.length) {
+    // Partial color match — heavily penalize (e.g. "blue" matches but "baby" doesn't)
+    score -= 10;
   }
 
   if (filament.bambuCode && normalizedTitle.includes(normalizeComparable(filament.bambuCode))) {
@@ -99,7 +100,9 @@ function isStrongMatch(
   const colorTokens = getDistinctiveColorTokens(filament);
   const brandMatched = brandTokens.length === 0 || brandTokens.some((token) => normalizedTitle.includes(token));
   const materialMatched = materialTokens.length === 0 || materialTokens.some((token) => normalizedTitle.includes(token));
-  const colorMatched = colorTokens.length === 0 || colorTokens.some((token) => normalizedTitle.includes(token));
+  // Require ALL distinctive color tokens to match — partial matches cause wrong-color linking
+  // (e.g. "blue" matching "Baby Blue" to "Neon City blue magenta")
+  const colorMatched = colorTokens.length === 0 || colorTokens.every((token) => normalizedTitle.includes(token));
 
   if (candidate.totalWeightG && filament.weightG) {
     const ratio = candidate.totalWeightG / filament.weightG;
