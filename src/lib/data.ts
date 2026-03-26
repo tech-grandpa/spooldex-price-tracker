@@ -592,12 +592,16 @@ export async function getFilamentDetail(idOrSlug: string) {
   const serializedOffers = offers.map(serializeOffer);
   const relatedBestOffers = await getBestOffersForFilamentIds(related.map((entry) => entry.id));
 
+  // Collect all unique images: filament canonical + offer images (deduped by base URL)
+  const allImages = collectUniqueImages(filament.imageUrl, serializedOffers);
+
   return {
     filament: {
       ...filament,
       href: `/filaments/${filament.slug}`,
       canonicalUrl: buildAbsoluteUrl(`/filaments/${filament.slug}`),
     },
+    images: allImages,
     offers: serializedOffers,
     priceHistory: offers.flatMap((offer) =>
       offer.snapshots.map((snapshot) => ({
@@ -612,10 +616,46 @@ export async function getFilamentDetail(idOrSlug: string) {
     related: related.map((entry) => ({
       ...entry,
       href: `/filaments/${entry.slug}`,
-      imageUrl: entry.imageUrl || relatedBestOffers.get(entry.id)?.imageUrl || null,
+      imageUrl: entry.imageUrl || null,
       bestOffer: relatedBestOffers.get(entry.id) ?? null,
     })),
   };
+}
+
+/** Collect unique images from filament + offers, deduplicating scaled variants */
+function collectUniqueImages(
+  filamentImageUrl: string | null,
+  offers: Array<{ imageUrl: string | null }>,
+): string[] {
+  const urls: string[] = [];
+  const seenBases = new Set<string>();
+
+  function normalizeForDedup(url: string): string {
+    // Strip common size/scale suffixes and query params to detect duplicates
+    return url
+      .replace(/[?#].*$/, "")
+      .replace(/-(?:mix-\d+|thumb|small|medium|large|full|\d+x\d+)(?=\.\w+$)/, "")
+      .replace(/\/(?:thumb|preview|small|medium|large|full)\//, "/normalized/")
+      .toLowerCase();
+  }
+
+  function addImage(url: string | null) {
+    if (!url) return;
+    const base = normalizeForDedup(url);
+    if (seenBases.has(base)) return;
+    seenBases.add(base);
+    urls.push(url);
+  }
+
+  // Filament canonical image first
+  addImage(filamentImageUrl);
+
+  // Offer images
+  for (const offer of offers) {
+    addImage(offer.imageUrl);
+  }
+
+  return urls;
 }
 
 export async function listApiFilaments({

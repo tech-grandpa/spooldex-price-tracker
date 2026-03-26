@@ -118,7 +118,7 @@ export default async function FilamentPage({ params }: FilamentPageProps) {
     brand: data.filament.brand,
     color: data.filament.colorName,
     category: data.filament.material,
-    image: data.filament.imageUrl ? [data.filament.imageUrl] : undefined,
+    image: data.images.length > 0 ? data.images : undefined,
     sku: data.filament.bambuCode ?? data.filament.ean ?? undefined,
     offers: data.offers.slice(0, 8).map((offer) => ({
       "@type": "Offer",
@@ -143,23 +143,40 @@ export default async function FilamentPage({ params }: FilamentPageProps) {
       />
 
       <section className="overflow-hidden rounded-xl border border-border bg-card lg:grid lg:grid-cols-[0.95fr_1.05fr]">
-        <div className="min-h-[320px] border-b border-border bg-secondary lg:border-b-0 lg:border-r">
-          {data.filament.imageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={data.filament.imageUrl}
-              alt={`${data.filament.brand} ${data.filament.colorName ?? ""}`}
-              className="h-full w-full object-cover"
-            />
+        <div className="border-b border-border bg-secondary lg:border-b-0 lg:border-r">
+          {data.images.length > 0 ? (
+            <div className="flex flex-col">
+              {/* Primary image */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={data.images[0]}
+                alt={`${data.filament.brand} ${data.filament.colorName ?? ""}`}
+                className="h-[320px] w-full object-cover"
+              />
+              {/* Additional images */}
+              {data.images.length > 1 && (
+                <div className="flex gap-px border-t border-border">
+                  {data.images.slice(1, 4).map((url, i) => (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      key={i}
+                      src={url}
+                      alt={`${data.filament.brand} ${data.filament.colorName ?? ""} — image ${i + 2}`}
+                      className="h-24 flex-1 object-cover border-r border-border last:border-r-0"
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
           ) : data.filament.colorHex ? (
-            <div className="flex h-full w-full items-center justify-center" style={{ background: data.filament.colorHex }}>
+            <div className="flex h-[320px] w-full items-center justify-center" style={{ background: data.filament.colorHex }}>
               <div
                 className="h-36 w-36 rounded-full border-[16px] opacity-20"
                 style={{ borderColor: "rgba(255,255,255,0.2)" }}
               />
             </div>
           ) : (
-            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-secondary to-muted/30">
+            <div className="flex h-[320px] w-full items-center justify-center bg-gradient-to-br from-secondary to-muted/30">
               <span className="text-lg font-medium text-muted-foreground">No preview</span>
             </div>
           )}
