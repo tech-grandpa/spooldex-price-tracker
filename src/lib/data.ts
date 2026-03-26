@@ -566,7 +566,6 @@ export async function getShopPageData(shopId: string) {
 
 export async function getShopsIndexPageData(region?: string | null) {
   const allShops = await prisma.shop.findMany({
-    where: { enabled: true },
     orderBy: { name: "asc" },
     include: {
       offers: {
