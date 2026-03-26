@@ -402,7 +402,7 @@ export async function getBrandPageData(brandSlug: string) {
     filaments: filaments.map((filament) => ({
       ...filament,
       href: `/filaments/${filament.slug}`,
-      imageUrl: filament.imageUrl || bestOffers.get(filament.id)?.imageUrl || null,
+      imageUrl: filament.imageUrl || null,
       bestOffer: bestOffers.get(filament.id) ?? null,
     })),
   };
@@ -463,7 +463,7 @@ export async function getMaterialsIndexPageData() {
         ...entry.representative,
         name: entry.material,
         href: `/materials/${entry.slug}`,
-        imageUrl: entry.representative.imageUrl || entry.representativeOffer?.imageUrl || null,
+        imageUrl: entry.representative.imageUrl || null,
         bestOffer: entry.representativeOffer,
         totalCount: entry.totalCount,
         pricedCount: entry.pricedCount,
@@ -501,7 +501,7 @@ export async function getMaterialPageData(materialSlug: string) {
     filaments: filaments.map((filament) => ({
       ...filament,
       href: `/filaments/${filament.slug}`,
-      imageUrl: filament.imageUrl || bestOffers.get(filament.id)?.imageUrl || null,
+      imageUrl: filament.imageUrl || null,
       bestOffer: bestOffers.get(filament.id) ?? null,
     })),
   };
@@ -595,7 +595,6 @@ export async function getFilamentDetail(idOrSlug: string) {
   return {
     filament: {
       ...filament,
-      imageUrl: filament.imageUrl || serializedOffers[0]?.imageUrl || null,
       href: `/filaments/${filament.slug}`,
       canonicalUrl: buildAbsoluteUrl(`/filaments/${filament.slug}`),
     },
@@ -988,17 +987,11 @@ export async function upsertOfferSnapshot(args: {
     });
   }
 
-  if (args.imageUrl) {
-    await prisma.filament.updateMany({
-      where: {
-        id: args.filamentId,
-        OR: [{ imageUrl: null }, { imageUrl: "" }],
-      },
-      data: {
-        imageUrl: args.imageUrl,
-      },
-    });
-  }
+  // NOTE: We no longer backfill filament.imageUrl from offer images.
+  // Offer images are often for a different color variant (e.g. 3Dmensionals
+  // returns a generic product page image that may show Black when the
+  // filament is Pink Citrus). Instead, we let the display layer fall back
+  // to the color swatch for filaments without a canonical image.
 
   return offer;
 }
