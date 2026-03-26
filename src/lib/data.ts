@@ -983,6 +983,9 @@ export async function ensureDefaultShops() {
     { id: "matterhackers", name: "MatterHackers", market: "us", regions: ["us", "ca"], baseUrl: "https://www.matterhackers.com", scraperType: "manual", enabled: false },
     { id: "printed-solid", name: "Printed Solid", market: "us", regions: ["us"], baseUrl: "https://www.printedsolid.com", scraperType: "manual", enabled: false },
     { id: "polymaker-us", name: "Polymaker US", market: "us", regions: ["us", "ca"], baseUrl: "https://shop.polymaker.com", scraperType: "shopify-json", enabled: true },
+    { id: "proto-pasta-us", name: "Proto-pasta", market: "us", regions: ["us"], baseUrl: "https://www.proto-pasta.com", scraperType: "shopify-json", enabled: true },
+    // Europe — direct brand shops
+    { id: "extrudr-eu", name: "Extrudr", market: "de", regions: ["eu"], baseUrl: "https://www.extrudr.com", scraperType: "sitemap-product", enabled: true },
     // Canada
     { id: "filaments-ca", name: "Filaments.ca", market: "ca", regions: ["ca"], baseUrl: "https://filaments.ca", scraperType: "manual", enabled: false },
     { id: "3dprintingcanada", name: "3D Printing Canada", market: "ca", regions: ["ca"], baseUrl: "https://3dprintingcanada.com", scraperType: "manual", enabled: false },

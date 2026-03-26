@@ -11,6 +11,8 @@ import { bambuStoreScraper } from "@/lib/scrapers/bambu-store";
 import { prusaStoreScraper } from "@/lib/scrapers/prusa-store";
 import { threeDjakeScraper } from "@/lib/scrapers/three-djake";
 import { polymakerScraper } from "@/lib/scrapers/polymaker";
+import { protoPastaScraper } from "@/lib/scrapers/proto-pasta";
+import { extrudrScraper } from "@/lib/scrapers/extrudr";
 import type { ScrapedOfferCandidate, ScrapeFilamentInput, ShopScraper } from "@/lib/scrapers/types";
 
 const SCRAPERS: Record<string, ShopScraper> = {
@@ -22,6 +24,8 @@ const SCRAPERS: Record<string, ShopScraper> = {
   [formFuturaScraper.shopId]: formFuturaScraper,
   [colorFabbScraper.shopId]: colorFabbScraper,
   [polymakerScraper.shopId]: polymakerScraper,
+  [protoPastaScraper.shopId]: protoPastaScraper,
+  [extrudrScraper.shopId]: extrudrScraper,
 };
 
 export function getShopScraper(shopId: string) {
