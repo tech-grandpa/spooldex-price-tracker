@@ -63,7 +63,8 @@ interface FilamentCardProps {
 }
 
 export function FilamentCard({ filament }: FilamentCardProps) {
-  const imageUrl = filament.imageUrl || filament.bestOffer?.imageUrl || null;
+  // Only use the filament's canonical image — offer images are often wrong color
+  const imageUrl = filament.imageUrl || null;
 
   return (
     <Link

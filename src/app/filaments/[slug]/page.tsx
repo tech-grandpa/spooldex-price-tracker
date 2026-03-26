@@ -235,44 +235,44 @@ export default async function FilamentPage({ params }: FilamentPageProps) {
           <section className="rounded-xl border border-border bg-card px-5 py-5">
             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Price history</p>
             <div className="mt-4 space-y-4">
-              {timelinePoints.length > 0 ? (
+              {timelinePoints.length > 0 && hasMeaningfulPriceMovement ? (
                 <div className="rounded-lg border border-border bg-background px-4 py-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Lowest tracked price timeline</p>
-                      <p className="mt-1 text-2xl font-bold tabular-nums tracking-tight">
-                        {formatCurrency(timelinePoints[timelinePoints.length - 1]?.priceCents ?? null, lowest?.latestCurrency || "EUR")}
-                      </p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Lowest daily price · {formatDateTime(timelinePoints[0].scrapedAt)} – {formatDateTime(timelinePoints[timelinePoints.length - 1].scrapedAt)}
+                  </p>
+                  <div className="mt-3 flex gap-4">
+                    {/* Y-axis labels */}
+                    <div className="flex w-16 shrink-0 flex-col justify-between text-right text-xs tabular-nums text-muted-foreground">
+                      <span>{formatCurrency(Math.max(...timelinePoints.map((p) => p.priceCents)), lowest?.latestCurrency || "EUR")}</span>
+                      <span>{formatCurrency(Math.min(...timelinePoints.map((p) => p.priceCents)), lowest?.latestCurrency || "EUR")}</span>
                     </div>
-                    <p className="max-w-[13rem] text-right text-sm text-muted-foreground">
-                      {hasMeaningfulPriceMovement
-                        ? `Tracking since ${formatDateTime(timelinePoints[0].scrapedAt)}`
-                        : `No price change yet since ${formatDateTime(timelinePoints[0].scrapedAt)}`}
-                    </p>
-                  </div>
-
-                  {hasMeaningfulPriceMovement ? (
-                    <div className="mt-4">
-                      <svg viewBox="0 0 120 34" className="h-20 w-full">
+                    {/* Chart */}
+                    <div className="flex-1">
+                      <svg viewBox="0 0 120 34" className="h-24 w-full" preserveAspectRatio="none">
                         <path
                           d={priceSparkline}
                           fill="none"
                           stroke="var(--primary)"
-                          strokeWidth="2.5"
+                          strokeWidth="2"
                           strokeLinecap="round"
                           strokeLinejoin="round"
                         />
                       </svg>
-                      <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+                      <div className="mt-1 flex items-center justify-between text-xs text-muted-foreground">
                         <span>{timelinePoints[0]?.label}</span>
                         <span>{timelinePoints[timelinePoints.length - 1]?.label}</span>
                       </div>
                     </div>
-                  ) : (
-                    <p className="mt-3 text-sm text-muted-foreground">
-                      The tracker is still building change history here, so we show freshness and current price state instead of repeating the same unchanged number.
-                    </p>
-                  )}
+                  </div>
+                </div>
+              ) : timelinePoints.length > 0 ? (
+                <div className="rounded-lg border border-border bg-background px-4 py-4">
+                  <p className="text-sm text-muted-foreground">
+                    No price change detected yet. Tracking since {formatDateTime(timelinePoints[0].scrapedAt)}.
+                  </p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Current price: <span className="font-semibold tabular-nums text-foreground">{formatCurrency(timelinePoints[0].priceCents, lowest?.latestCurrency || "EUR")}</span>
+                  </p>
                 </div>
               ) : (
                 <div className="rounded-lg border border-dashed border-border px-4 py-4 text-sm text-muted-foreground">
