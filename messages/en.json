@@ -143,5 +143,18 @@
     "minutesAgo": "{count}m ago",
     "hoursAgo": "{count}h ago",
     "daysAgo": "{count}d ago"
+  },
+  "regions": {
+    "label": "Region",
+    "all": "All regions",
+    "eu": "Europe",
+    "gb": "Great Britain",
+    "us": "USA",
+    "ca": "Canada",
+    "filterByRegion": "Filter by delivery region",
+    "shopsInRegion": "Shops delivering to {region}",
+    "allShops": "All tracked shops",
+    "comingSoon": "Coming soon",
+    "noShopsYet": "No shops tracked for this region yet. We are expanding coverage."
   }
 }

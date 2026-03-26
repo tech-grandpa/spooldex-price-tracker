@@ -3,6 +3,14 @@ import { prisma } from "@/lib/prisma";
 import { buildAbsoluteUrl, computePricePerKgCents, formatFreshness, normalizeComparable, slugify } from "@/lib/utils";
 import { DEFAULT_MARKET } from "@/lib/env";
 
+/** Build a Prisma where clause for shops filtered by region */
+function shopWhereByRegion(region?: string | null): Prisma.ShopWhereInput {
+  return {
+    enabled: true,
+    ...(region ? { regions: { has: region } } : { market: DEFAULT_MARKET }),
+  };
+}
+
 const offerInclude = {
   shop: true,
   items: {
@@ -116,9 +124,9 @@ function serializeOffer(offer: OfferWithRelations) {
   };
 }
 
-async function getShopSummaries() {
+async function getShopSummaries(region?: string | null) {
   const shops = await prisma.shop.findMany({
-    where: { market: DEFAULT_MARKET, enabled: true },
+    where: shopWhereByRegion(region),
     orderBy: { name: "asc" },
     include: {
       offers: {
@@ -556,11 +564,46 @@ export async function getShopPageData(shopId: string) {
   };
 }
 
-export async function getShopsIndexPageData() {
-  const shops = await getShopSummaries();
+export async function getShopsIndexPageData(region?: string | null) {
+  const allShops = await prisma.shop.findMany({
+    where: { enabled: true },
+    orderBy: { name: "asc" },
+    include: {
+      offers: {
+        where: { latestPriceCents: { not: null } },
+        include: { items: true },
+      },
+    },
+  });
+
+  const shops = allShops.map((shop) => {
+    const filamentIds = new Set(shop.offers.flatMap((o) => o.items.map((i) => i.filamentId)));
+    const latestDate = shop.offers.reduce<Date | null>((latest, o) => {
+      if (!o.latestScrapedAt) return latest;
+      if (!latest || latest.getTime() < o.latestScrapedAt.getTime()) return o.latestScrapedAt;
+      return latest;
+    }, null);
+    return {
+      id: shop.id,
+      name: shop.name,
+      market: shop.market,
+      regions: shop.regions,
+      baseUrl: shop.baseUrl,
+      offerCount: shop.offers.length,
+      filamentCount: filamentIds.size,
+      lastCheckedAt: latestDate,
+      freshnessLabel: formatFreshness(latestDate),
+    };
+  });
+
+  // If region is specified, filter; otherwise show all
+  const filteredShops = region
+    ? shops.filter((s) => s.regions.includes(region))
+    : shops;
+
   const recentOffers = await prisma.offer.findMany({
     where: {
-      shop: { market: DEFAULT_MARKET, enabled: true },
+      shop: shopWhereByRegion(region),
       latestPriceCents: { not: null },
     },
     include: offerInclude,
@@ -569,7 +612,8 @@ export async function getShopsIndexPageData() {
   });
 
   return {
-    shops,
+    shops: filteredShops,
+    allShops: shops,
     recentOffers: recentOffers.sort(sortOffers).map(serializeOffer),
   };
 }
@@ -910,72 +954,46 @@ export async function lookupOffers(params: {
   };
 }
 
+export const REGIONS = [
+  { id: "eu", label: "Europe", flag: "🇪🇺" },
+  { id: "gb", label: "Great Britain", flag: "🇬🇧" },
+  { id: "us", label: "USA", flag: "🇺🇸" },
+  { id: "ca", label: "Canada", flag: "🇨🇦" },
+] as const;
+
+export type RegionId = (typeof REGIONS)[number]["id"];
+
 export async function ensureDefaultShops() {
-  const shops = [
-    {
-      id: "3djake-de",
-      name: "3DJake DE",
-      market: "de",
-      baseUrl: "https://www.3djake.de",
-      scraperType: "playwright-search",
-      enabled: true,
-    },
-    {
-      id: "bambu-store-eu",
-      name: "Bambu Store EU",
-      market: "de",
-      baseUrl: "https://eu.store.bambulab.com",
-      scraperType: "playwright-search",
-      enabled: true,
-    },
-    {
-      id: "prusa-store",
-      name: "Prusa Store",
-      market: "de",
-      baseUrl: "https://www.prusa3d.com",
-      scraperType: "playwright-search",
-      enabled: true,
-    },
-    {
-      id: "3dprima",
-      name: "3DPrima",
-      market: "de",
-      baseUrl: "https://www.3dprima.com",
-      scraperType: "sitemap-product",
-      enabled: true,
-    },
-    {
-      id: "3dmensionals",
-      name: "3Dmensionals",
-      market: "de",
-      baseUrl: "https://www.3dmensionals.de",
-      scraperType: "sitemap-product",
-      enabled: true,
-    },
-    {
-      id: "formfutura",
-      name: "FormFutura",
-      market: "de",
-      baseUrl: "https://www.formfutura.com",
-      scraperType: "sitemap-product",
-      enabled: true,
-    },
-    {
-      id: "colorfabb",
-      name: "ColorFabb",
-      market: "de",
-      baseUrl: "https://colorfabb.com",
-      scraperType: "sitemap-product",
-      enabled: true,
-    },
-  ] as const;
+  const shops: Array<{
+    id: string; name: string; market: string; regions: string[];
+    baseUrl: string; scraperType: string; enabled: boolean;
+  }> = [
+    // Europe
+    { id: "3djake-de", name: "3DJake DE", market: "de", regions: ["eu"], baseUrl: "https://www.3djake.de", scraperType: "playwright-search", enabled: true },
+    { id: "bambu-store-eu", name: "Bambu Store EU", market: "de", regions: ["eu", "gb"], baseUrl: "https://eu.store.bambulab.com", scraperType: "playwright-search", enabled: true },
+    { id: "prusa-store", name: "Prusa Store", market: "de", regions: ["eu", "gb"], baseUrl: "https://www.prusa3d.com", scraperType: "playwright-search", enabled: true },
+    { id: "3dprima", name: "3DPrima", market: "de", regions: ["eu"], baseUrl: "https://www.3dprima.com", scraperType: "sitemap-product", enabled: true },
+    { id: "3dmensionals", name: "3Dmensionals", market: "de", regions: ["eu"], baseUrl: "https://www.3dmensionals.de", scraperType: "sitemap-product", enabled: true },
+    { id: "formfutura", name: "FormFutura", market: "de", regions: ["eu"], baseUrl: "https://www.formfutura.com", scraperType: "sitemap-product", enabled: true },
+    { id: "colorfabb", name: "ColorFabb", market: "de", regions: ["eu"], baseUrl: "https://colorfabb.com", scraperType: "sitemap-product", enabled: true },
+    // Great Britain
+    { id: "3djake-uk", name: "3DJake UK", market: "gb", regions: ["gb"], baseUrl: "https://www.3djake.co.uk", scraperType: "playwright-search", enabled: false },
+    // USA
+    { id: "bambu-store-us", name: "Bambu Store US", market: "us", regions: ["us", "ca"], baseUrl: "https://us.store.bambulab.com", scraperType: "playwright-search", enabled: false },
+    { id: "amazon-us", name: "Amazon US", market: "us", regions: ["us"], baseUrl: "https://www.amazon.com", scraperType: "manual", enabled: false },
+    { id: "matterhackers", name: "MatterHackers", market: "us", regions: ["us", "ca"], baseUrl: "https://www.matterhackers.com", scraperType: "manual", enabled: false },
+    { id: "printed-solid", name: "Printed Solid", market: "us", regions: ["us"], baseUrl: "https://www.printedsolid.com", scraperType: "manual", enabled: false },
+    // Canada
+    { id: "filaments-ca", name: "Filaments.ca", market: "ca", regions: ["ca"], baseUrl: "https://filaments.ca", scraperType: "manual", enabled: false },
+    { id: "3dprintingcanada", name: "3D Printing Canada", market: "ca", regions: ["ca"], baseUrl: "https://3dprintingcanada.com", scraperType: "manual", enabled: false },
+  ];
 
   await Promise.all(
     shops.map((entry) =>
       prisma.shop.upsert({
         where: { id: entry.id },
         create: entry,
-        update: entry,
+        update: { name: entry.name, market: entry.market, regions: entry.regions, baseUrl: entry.baseUrl, enabled: entry.enabled },
       }),
     ),
   );

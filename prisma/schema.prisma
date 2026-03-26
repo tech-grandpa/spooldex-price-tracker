@@ -35,6 +35,7 @@ model Shop {
   id          String   @id
   name        String
   market      String   @default("de")
+  regions     String[] @default(["eu"])
   baseUrl     String?
   scraperType String
   enabled     Boolean  @default(true)

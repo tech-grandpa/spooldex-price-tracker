@@ -23,7 +23,7 @@
     "activeShops": "Aktive Shops",
     "liveOffers": "Aktuelle Angebote",
     "filamentIndex": "Filament-Index",
-    "searchResults": "Suchergebnisse für \u201E{q}\u201C",
+    "searchResults": "Suchergebnisse für „{q}“",
     "freshPages": "Aktuelle Katalogseiten",
     "browseMaterials": "Materialien durchsuchen",
     "activeRetailers": "Aktive Händler",
@@ -143,5 +143,18 @@
     "minutesAgo": "vor {count} Min.",
     "hoursAgo": "vor {count} Std.",
     "daysAgo": "vor {count} T."
+  },
+  "regions": {
+    "label": "Region",
+    "all": "Alle Regionen",
+    "eu": "Europa",
+    "gb": "Großbritannien",
+    "us": "USA",
+    "ca": "Kanada",
+    "filterByRegion": "Nach Lieferregion filtern",
+    "shopsInRegion": "Shops mit Lieferung nach {region}",
+    "allShops": "Alle erfassten Shops",
+    "comingSoon": "Demnächst",
+    "noShopsYet": "Für diese Region werden noch keine Shops erfasst. Wir erweitern die Abdeckung."
   }
 }
