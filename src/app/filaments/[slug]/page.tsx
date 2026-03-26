@@ -151,16 +151,17 @@ export default async function FilamentPage({ params }: FilamentPageProps) {
               alt={`${data.filament.brand} ${data.filament.colorName ?? ""}`}
               className="h-full w-full object-cover"
             />
+          ) : data.filament.colorHex ? (
+            <div className="flex h-full w-full items-center justify-center" style={{ background: data.filament.colorHex }}>
+              <div
+                className="h-36 w-36 rounded-full border-[16px] opacity-20"
+                style={{ borderColor: "rgba(255,255,255,0.2)" }}
+              />
+            </div>
           ) : (
-            <div
-              className="h-full w-full"
-              style={{
-                background:
-                  data.filament.colorHex
-                    ? `linear-gradient(145deg, ${data.filament.colorHex}, rgba(250,250,250,0.9))`
-                    : "linear-gradient(145deg, rgba(12,133,122,0.15), rgba(250,250,250,0.95))",
-              }}
-            />
+            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-secondary to-muted/30">
+              <span className="text-lg font-medium text-muted-foreground">No preview</span>
+            </div>
           )}
         </div>
         <div className="space-y-6 px-6 py-7 sm:px-8">

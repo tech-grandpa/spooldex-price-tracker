@@ -1,6 +1,43 @@
 import Link from "next/link";
 import { formatCurrency } from "@/lib/utils";
 
+function ColorSwatchPreview({ colorHex, colorName }: { colorHex: string | null; colorName: string | null }) {
+  if (!colorHex) {
+    return (
+      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-secondary to-muted/30">
+        <span className="text-sm font-medium text-muted-foreground">{colorName || "No preview"}</span>
+      </div>
+    );
+  }
+
+  // Parse hex to determine if color is light or dark for contrast
+  const hex = colorHex.replace("#", "");
+  const r = parseInt(hex.substring(0, 2), 16) || 128;
+  const g = parseInt(hex.substring(2, 4), 16) || 128;
+  const b = parseInt(hex.substring(4, 6), 16) || 128;
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  const textColor = luminance > 0.6 ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.6)";
+
+  return (
+    <div className="relative flex h-full w-full items-center justify-center" style={{ background: colorHex }}>
+      {/* Spool ring visualization */}
+      <div
+        className="absolute h-28 w-28 rounded-full border-[12px] opacity-30"
+        style={{ borderColor: luminance > 0.6 ? "rgba(0,0,0,0.12)" : "rgba(255,255,255,0.15)" }}
+      />
+      <div
+        className="absolute h-12 w-12 rounded-full opacity-25"
+        style={{ background: luminance > 0.6 ? "rgba(0,0,0,0.08)" : "rgba(255,255,255,0.1)" }}
+      />
+      {colorName && (
+        <span className="relative z-10 text-xs font-semibold" style={{ color: textColor }}>
+          {colorName}
+        </span>
+      )}
+    </div>
+  );
+}
+
 interface FilamentCardProps {
   filament: {
     slug: string;
@@ -42,15 +79,7 @@ export function FilamentCard({ filament }: FilamentCardProps) {
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
           />
         ) : (
-          <div
-            className="h-full w-full"
-            style={{
-              background:
-                filament.colorHex
-                  ? `linear-gradient(140deg, ${filament.colorHex}, rgba(255,255,255,0.75))`
-                  : "linear-gradient(140deg, rgba(12,133,122,0.15), rgba(250,250,250,0.95))",
-            }}
-          />
+          <ColorSwatchPreview colorHex={filament.colorHex} colorName={filament.colorName} />
         )}
         <div className="absolute left-3 top-3">
           <span className="rounded-full border border-primary/20 bg-primary-light px-2.5 py-0.5 text-xs font-semibold text-accent-foreground">
