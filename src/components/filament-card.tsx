@@ -2,11 +2,38 @@ import Link from "next/link";
 import { formatCurrency } from "@/lib/utils";
 import { SafeImage } from "@/components/safe-image";
 
-function ColorSwatchPreview({ colorHex, colorName }: { colorHex: string | null; colorName: string | null }) {
+/** Fallback colors by material family so cards without colorHex aren't gray */
+function getMaterialFallbackColor(material?: string | null): string {
+  if (!material) return "#64748b"; // slate
+  const m = material.toUpperCase();
+  if (m.includes("PLA")) return "#0C857A"; // teal (primary)
+  if (m.includes("PETG") || m.includes("PET")) return "#2563eb"; // blue
+  if (m.includes("ABS")) return "#dc2626"; // red
+  if (m.includes("ASA")) return "#ea580c"; // orange
+  if (m.includes("TPU") || m.includes("FLEX")) return "#7c3aed"; // purple
+  if (m.includes("PA") || m.includes("NYLON")) return "#0891b2"; // cyan
+  if (m.includes("PC")) return "#475569"; // slate gray
+  if (m.includes("WOOD") || m.includes("CORK")) return "#92400e"; // amber/brown
+  if (m.includes("METAL") || m.includes("STEEL") || m.includes("COPPER")) return "#78716c"; // stone
+  return "#64748b"; // default slate
+}
+
+function ColorSwatchPreview({ colorHex, colorName, material }: { colorHex: string | null; colorName: string | null; material?: string }) {
   if (!colorHex) {
+    // Use a material-themed gradient so cards never look empty
+    const materialColor = getMaterialFallbackColor(material);
     return (
-      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-secondary to-muted/30">
-        <span className="text-sm font-medium text-muted-foreground">{colorName || "No preview"}</span>
+      <div
+        className="relative flex h-full w-full items-center justify-center"
+        style={{ background: `linear-gradient(135deg, ${materialColor}, ${materialColor}88)` }}
+      >
+        <div
+          className="absolute h-28 w-28 rounded-full border-[12px] opacity-15"
+          style={{ borderColor: "rgba(255,255,255,0.2)" }}
+        />
+        <span className="relative z-10 text-xs font-semibold text-white/60">
+          {colorName || material || "Filament"}
+        </span>
       </div>
     );
   }
@@ -80,7 +107,7 @@ export function FilamentCard({ filament }: FilamentCardProps) {
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
           />
         ) : (
-          <ColorSwatchPreview colorHex={filament.colorHex} colorName={filament.colorName} />
+          <ColorSwatchPreview colorHex={filament.colorHex} colorName={filament.colorName} material={filament.material} />
         )}
         <div className="absolute left-3 top-3">
           <span className="rounded-full border border-primary/20 bg-primary-light px-2.5 py-0.5 text-xs font-semibold text-accent-foreground">
