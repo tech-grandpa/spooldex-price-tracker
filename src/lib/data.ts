@@ -575,16 +575,29 @@ export async function getFilamentDetail(idOrSlug: string) {
 
   const [directOffers, related] = await Promise.all([
     getOffersForFilamentId(filament.id),
-    prisma.filament.findMany({
-      where: {
-        id: { not: filament.id },
-        OR: [
-          { brand: filament.brand },
-          { material: filament.material },
-        ],
-      },
-      orderBy: { updatedAt: "desc" },
-      take: 6,
+    // Prefer same-brand related, then same-material from other brands
+    Promise.all([
+      prisma.filament.findMany({
+        where: {
+          id: { not: filament.id },
+          brand: filament.brand,
+          material: filament.material,
+        },
+        orderBy: { updatedAt: "desc" },
+        take: 6,
+      }),
+      prisma.filament.findMany({
+        where: {
+          id: { not: filament.id },
+          brand: filament.brand,
+          material: { not: filament.material },
+        },
+        orderBy: { updatedAt: "desc" },
+        take: 6,
+      }),
+    ]).then(([sameBrandMaterial, sameBrandOther]) => {
+      const combined = [...sameBrandMaterial, ...sameBrandOther];
+      return combined.slice(0, 6);
     }),
   ]);
 
