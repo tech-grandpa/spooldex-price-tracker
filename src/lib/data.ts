@@ -446,7 +446,14 @@ export async function getMaterialsIndexPageData() {
 
     const existingPrice = existing.representativeOffer?.latestPricePerKgCents ?? Number.MAX_SAFE_INTEGER;
     const nextPrice = bestOffer?.latestPricePerKgCents ?? Number.MAX_SAFE_INTEGER;
-    if (nextPrice < existingPrice || (!existing.representative.imageUrl && filament.imageUrl)) {
+    const existingHasVisual = !!(existing.representative.imageUrl || existing.representative.colorHex);
+    const nextHasVisual = !!(filament.imageUrl || filament.colorHex);
+    // Prefer: has image > has colorHex > cheaper price
+    if (
+      (!existing.representative.imageUrl && filament.imageUrl) ||
+      (!existingHasVisual && nextHasVisual) ||
+      (existingHasVisual === nextHasVisual && nextPrice < existingPrice)
+    ) {
       existing.representative = filament;
       existing.representativeOffer = bestOffer;
     }
