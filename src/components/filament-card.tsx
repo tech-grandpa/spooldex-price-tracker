@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { formatCurrency } from "@/lib/utils";
+import { SafeImage } from "@/components/safe-image";
 
 function ColorSwatchPreview({ colorHex, colorName }: { colorHex: string | null; colorName: string | null }) {
   if (!colorHex) {
@@ -73,8 +74,7 @@ export function FilamentCard({ filament }: FilamentCardProps) {
     >
       <div className="relative h-44 overflow-hidden border-b border-border bg-secondary">
         {imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <SafeImage
             src={imageUrl}
             alt={`${filament.brand} ${filament.series ?? filament.material} ${filament.colorName ?? ""}`}
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"

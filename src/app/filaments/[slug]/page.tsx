@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { SiteShell } from "@/components/site-shell";
 import { OfferList } from "@/components/offer-list";
 import { FilamentCard } from "@/components/filament-card";
+import { SafeImage } from "@/components/safe-image";
 import { getFilamentDetail } from "@/lib/data";
 import { formatCurrency } from "@/lib/utils";
 
@@ -147,18 +148,16 @@ export default async function FilamentPage({ params }: FilamentPageProps) {
           {data.images.length > 0 ? (
             <div className="flex flex-col">
               {/* Primary image */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <SafeImage
                 src={data.images[0]}
                 alt={`${data.filament.brand} ${data.filament.colorName ?? ""}`}
                 className="h-[320px] w-full object-cover"
               />
-              {/* Additional images */}
+              {/* Additional images — hide broken ones */}
               {data.images.length > 1 && (
-                <div className="flex gap-px border-t border-border">
+                <div className="flex gap-px border-t border-border [&:empty]:hidden">
                   {data.images.slice(1, 4).map((url, i) => (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
+                    <SafeImage
                       key={i}
                       src={url}
                       alt={`${data.filament.brand} ${data.filament.colorName ?? ""} — image ${i + 2}`}
