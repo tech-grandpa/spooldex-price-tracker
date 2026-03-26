@@ -1,0 +1,147 @@
+{
+  "metadata": {
+    "title": "Spooldex Tracker",
+    "description": "Offene Filament-Preisübersicht für Deutschland. Aktuelle Angebote vergleichen, Aktualität prüfen und beliebte 3D-Druck-Materialien finden."
+  },
+  "nav": {
+    "overview": "Übersicht",
+    "shops": "Shops",
+    "materials": "Materialien"
+  },
+  "footer": {
+    "tagline": "Erst öffentliche Auffindbarkeit, dann Spooldex-Integration.",
+    "market": "Markt: DE"
+  },
+  "home": {
+    "badge": "Öffentlich durchsuchbarer Katalog · DE-Markt",
+    "title": "Filament-Angebote vergleichen, ohne auf Marktplatz-Freigaben zu warten.",
+    "description": "Spooldex Tracker startet mit offener Shop-Abdeckung, Aktualitäts-Timestamps und öffentlichen Landingpages, die ranken können. Phase 1 dreht sich um Auffindbarkeit und Vertrauen – nicht um geschlossene Affiliate-APIs.",
+    "searchPlaceholder": "Suche Bambu PLA Basic, Prusament PETG...",
+    "searchButton": "Katalog durchsuchen",
+    "trackedFilaments": "Erfasste Filamente",
+    "filamentsWithPrices": "Filamente mit Preisen",
+    "activeShops": "Aktive Shops",
+    "liveOffers": "Aktuelle Angebote",
+    "filamentIndex": "Filament-Index",
+    "searchResults": "Suchergebnisse für \u201E{q}\u201C",
+    "freshPages": "Aktuelle Katalogseiten",
+    "browseMaterials": "Materialien durchsuchen",
+    "activeRetailers": "Aktive Händler",
+    "openShopCoverage": "Shop-Abdeckung ansehen",
+    "popularMaterials": "Beliebte Materialien",
+    "recentlyRefreshed": "Zuletzt aktualisierte Angebote"
+  },
+  "materialsIndex": {
+    "metaTitle": "Filament-Materialien für Deutschland",
+    "metaDescription": "Erst das Material wählen, dann zu den aktuellen Preisseiten für das gewünschte Filament navigieren.",
+    "pageLabel": "Material-Index",
+    "title": "Erst das Material wählen, dann zur passenden Spule.",
+    "description": "Der saubere Einstieg, der dem Tracker bisher gefehlt hat. Zuerst PLA, PETG, ABS oder eine Spezial-Mischung auswählen, dann zu den Live-Filamentseiten wechseln.",
+    "materialLabel": "Material",
+    "pricedPages": "{pricedCount} Seiten mit Preisen · {totalCount} erfasste Filamente",
+    "livePages": "{count} Live-Seiten mit Preisen",
+    "totalTracked": "{count} erfasste Seiten insgesamt"
+  },
+  "materialDetail": {
+    "metaTitle": "{material}-Filament-Preise",
+    "metaDescription": "Erfasste {material}-Filament-Angebote für Deutschland.",
+    "pageLabel": "Material-Seite",
+    "description": "Öffentliche Vergleichsseiten für {material}-Angebote – konzipiert zum Ranken und um aktuelle Einzelspulen- und Paketpreise transparent zu machen."
+  },
+  "brand": {
+    "metaTitle": "{brand} Filament-Preise",
+    "metaDescription": "Live-Angebotsverfolgung für {brand}-Filament in Deutschland.",
+    "pageLabel": "Marken-Seite",
+    "description": "Durchsuchbare Angebotsseiten für {brand}, an einem Ort gebündelt – so lassen sich Materialien und Farben vergleichen, ohne zwischen Shop-Suchseiten zu springen."
+  },
+  "filament": {
+    "metaDescriptionWithPrice": "Aktuelle {brand}-Angebote vergleichen – ab {price}.",
+    "metaDescription": "Preisseite für {brand} {material}.",
+    "pageLabel": "Kanonisches Filament",
+    "colorPending": "Farbe ausstehend",
+    "lowestPrice": "Niedrigster aktueller Preis",
+    "trackedOffers": "Erfasste Angebote",
+    "freshness": "Aktualität",
+    "pending": "ausstehend",
+    "singleSpool": "Einzelspulen-Angebote",
+    "buyThisSpool": "Genau diese Spule kaufen",
+    "packOffers": "Paket-Angebote",
+    "packDescription": "Großpackungen, Sampler und gemischte Pakete",
+    "priceHistory": "Preisverlauf",
+    "dailyLowest": "Niedrigster Tagespreis · {from} – {to}",
+    "noPriceChange": "Noch keine Preisänderung erkannt. Tracking seit {date}.",
+    "currentPrice": "Aktueller Preis:",
+    "noSnapshots": "Noch keine Snapshots für diese Seite erfasst.",
+    "lastChecked": "Zuletzt geprüft {date}",
+    "waitingSnapshot": "Warte auf ersten Snapshot",
+    "priceDown": "Gesunken um {amount} seit {date}",
+    "priceUp": "Gestiegen um {amount} seit {date}",
+    "unchanged": "Unverändert seit {date}",
+    "noHistory": "Noch kein Verlauf",
+    "relatedPages": "Verwandte Seiten",
+    "noPreview": "Keine Vorschau"
+  },
+  "shopsIndex": {
+    "metaTitle": "Erfasste Filament-Shops in Deutschland",
+    "metaDescription": "Alle Filament-Händler, die Spooldex Tracker aktuell abdeckt – mit Angebotsanzahl und letztem Prüfzeitpunkt.",
+    "pageLabel": "Shop-Abdeckung",
+    "title": "Alle derzeit für Deutschland erfassten Shops.",
+    "description": "Dieser Index zeigt jeden Live-Händler im aktuellen Crawl-Set, inklusive Abdeckungsbreite und verfügbarer Paketangebote.",
+    "trackedShops": "Erfasste Shops",
+    "liveOffers": "Aktuelle Angebote",
+    "packOffers": "Paket-Angebote",
+    "retailer": "{market}-Händler",
+    "offers": "Angebote",
+    "filaments": "Filamente",
+    "bestPrice": "Bester sichtbarer Preis",
+    "noOffers": "Noch keine Angebote mit Preisen für diesen Shop.",
+    "latestCrawl": "Neueste Crawl-Ergebnisse",
+    "recentlyRefreshed": "Zuletzt aktualisierte Angebote"
+  },
+  "shopDetail": {
+    "metaTitle": "{shop} Filament-Angebote",
+    "metaDescription": "Aktuell sichtbare Angebote bei {shop} für den deutschen Markt.",
+    "pageLabel": "Händler-Seite",
+    "description": "Angebots-Aktualität und Landingpages von {shop}, vom Tracker-Worker aktualisiert und für die öffentliche Auffindbarkeit bereitgestellt.",
+    "liveOffers": "Aktuelle Angebote",
+    "trackedFilaments": "Erfasste Filamente",
+    "packOffers": "Paket-Angebote",
+    "freshness": "Aktualität",
+    "singleSpool": "Einzelspulen-Angebote",
+    "detailFirst": "Erst Details, dann Shop",
+    "packDescription": "Multipacks, Sampler-Sets und Bundles"
+  },
+  "offers": {
+    "noOffers": "Noch keine erfassten Angebote für dieses Filament.",
+    "offerColumn": "Angebot",
+    "priceColumn": "Preis",
+    "freshnessLinks": "Aktualität & Links",
+    "freshnessShop": "Aktualität & Shop",
+    "perKg": "{price}/kg",
+    "perKgPending": "kg-Preis ausstehend",
+    "details": "Details",
+    "goToShop": "Zum Shop",
+    "spools": " · {count} Spulen",
+    "outOfStock": " · derzeit nicht auf Lager"
+  },
+  "cards": {
+    "colorPending": "Farbe ausstehend",
+    "filament": "Filament",
+    "packLabel": "{count}x Paket · {shop}",
+    "liveTracker": "Live-Tracker-Seite"
+  },
+  "packType": {
+    "bulk": "Großpackung",
+    "variety": "Sortiment",
+    "sampler": "Sampler",
+    "mixed": "Materialmix",
+    "single": "Einzelspule"
+  },
+  "freshness": {
+    "notChecked": "noch nicht geprüft",
+    "justNow": "gerade eben",
+    "minutesAgo": "vor {count} Min.",
+    "hoursAgo": "vor {count} Std.",
+    "daysAgo": "vor {count} T."
+  }
+}

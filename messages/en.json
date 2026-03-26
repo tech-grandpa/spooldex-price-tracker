@@ -1,0 +1,147 @@
+{
+  "metadata": {
+    "title": "Spooldex Tracker",
+    "description": "Open filament price tracking for Germany. Compare current offers, track freshness, and discover where to buy popular 3D printing materials."
+  },
+  "nav": {
+    "overview": "Overview",
+    "shops": "Shops",
+    "materials": "Materials"
+  },
+  "footer": {
+    "tagline": "Built for public discovery first, Spooldex integration second.",
+    "market": "Market: DE"
+  },
+  "home": {
+    "badge": "Public crawlable catalog · DE market first",
+    "title": "Compare filament offers without waiting for marketplaces to approve you first.",
+    "description": "Spooldex Tracker starts with open shop coverage, freshness timestamps, and public landing pages that can rank. Phase 1 is about discovery and trust, not gated affiliate APIs.",
+    "searchPlaceholder": "Search Bambu PLA Basic, Prusament PETG...",
+    "searchButton": "Search live catalog",
+    "trackedFilaments": "Tracked filaments",
+    "filamentsWithPrices": "Filaments with prices",
+    "activeShops": "Active shops",
+    "liveOffers": "Live offers",
+    "filamentIndex": "Filament index",
+    "searchResults": "Search results for \"{q}\"",
+    "freshPages": "Fresh canonical pages",
+    "browseMaterials": "Browse materials",
+    "activeRetailers": "Active retailers",
+    "openShopCoverage": "Open shop coverage",
+    "popularMaterials": "Popular materials",
+    "recentlyRefreshed": "Recently refreshed offers"
+  },
+  "materialsIndex": {
+    "metaTitle": "Filament materials tracked in Germany",
+    "metaDescription": "Browse tracked filament materials first, then drill into live price pages for the exact material you want.",
+    "pageLabel": "Material index",
+    "title": "Start with the material, then drill into the exact spool.",
+    "description": "This is the clean entry point the tracker was missing. Pick PLA, PETG, ABS, or a specialty blend first, then move into the live filament pages from there.",
+    "materialLabel": "Material",
+    "pricedPages": "{pricedCount} priced pages · {totalCount} tracked filaments",
+    "livePages": "{count} live pages with prices",
+    "totalTracked": "{count} total tracked pages"
+  },
+  "materialDetail": {
+    "metaTitle": "{material} filament prices",
+    "metaDescription": "Tracked {material} filament offers for Germany.",
+    "pageLabel": "Material page",
+    "description": "Public comparison pages for {material} offers, designed to rank and to help users understand current single-spool and pack pricing."
+  },
+  "brand": {
+    "metaTitle": "{brand} filament prices",
+    "metaDescription": "Live offer tracking for {brand} filament in Germany.",
+    "pageLabel": "Brand page",
+    "description": "Crawlable offer pages for {brand}, grouped into one place so users can compare materials and colors without bouncing between shop search pages."
+  },
+  "filament": {
+    "metaDescriptionWithPrice": "Compare current {brand} offers starting at {price}.",
+    "metaDescription": "Tracked price page for {brand} {material}.",
+    "pageLabel": "Canonical filament",
+    "colorPending": "Color pending",
+    "lowestPrice": "Lowest current price",
+    "trackedOffers": "Tracked offers",
+    "freshness": "Freshness",
+    "pending": "pending",
+    "singleSpool": "Single spool offers",
+    "buyThisSpool": "Buy exactly this spool",
+    "packOffers": "Pack offers",
+    "packDescription": "Bulk, sampler, and mixed packs",
+    "priceHistory": "Price history",
+    "dailyLowest": "Lowest daily price · {from} – {to}",
+    "noPriceChange": "No price change detected yet. Tracking since {date}.",
+    "currentPrice": "Current price:",
+    "noSnapshots": "No snapshots recorded yet for this page.",
+    "lastChecked": "Last checked {date}",
+    "waitingSnapshot": "Waiting for first snapshot",
+    "priceDown": "Down {amount} since {date}",
+    "priceUp": "Up {amount} since {date}",
+    "unchanged": "Unchanged since {date}",
+    "noHistory": "No history yet",
+    "relatedPages": "Related pages",
+    "noPreview": "No preview"
+  },
+  "shopsIndex": {
+    "metaTitle": "Tracked filament shops in Germany",
+    "metaDescription": "See which filament retailers are currently covered by Spooldex Tracker, how many live offers each shop contributes, and when they were last checked.",
+    "pageLabel": "Shop coverage",
+    "title": "All shops currently tracked for Germany.",
+    "description": "This index shows every live retailer in the current crawl set, including how broad the coverage is and whether pack offers are present.",
+    "trackedShops": "Tracked shops",
+    "liveOffers": "Live offers",
+    "packOffers": "Pack offers",
+    "retailer": "{market} retailer",
+    "offers": "Offers",
+    "filaments": "Filaments",
+    "bestPrice": "Best visible price",
+    "noOffers": "No priced offers published yet for this shop.",
+    "latestCrawl": "Latest crawl results",
+    "recentlyRefreshed": "Recently refreshed offers"
+  },
+  "shopDetail": {
+    "metaTitle": "{shop} filament offers",
+    "metaDescription": "Tracked offers currently visible on {shop} for the German market.",
+    "pageLabel": "Retailer page",
+    "description": "Offer freshness and landing pages from {shop}, refreshed by the tracker worker and surfaced for public discovery.",
+    "liveOffers": "Live offers",
+    "trackedFilaments": "Tracked filaments",
+    "packOffers": "Pack offers",
+    "freshness": "Freshness",
+    "singleSpool": "Single spool offers",
+    "detailFirst": "Details first, shop second",
+    "packDescription": "Multipacks, sampler sets, and bundles"
+  },
+  "offers": {
+    "noOffers": "No tracked offers yet for this filament.",
+    "offerColumn": "Offer",
+    "priceColumn": "Price",
+    "freshnessLinks": "Freshness & links",
+    "freshnessShop": "Freshness & shop",
+    "perKg": "{price}/kg",
+    "perKgPending": "per-kg pending",
+    "details": "Details",
+    "goToShop": "Go to shop",
+    "spools": " · {count} spools",
+    "outOfStock": " · currently out of stock"
+  },
+  "cards": {
+    "colorPending": "Color pending",
+    "filament": "Filament",
+    "packLabel": "{count}x pack · {shop}",
+    "liveTracker": "Live tracker page"
+  },
+  "packType": {
+    "bulk": "Bulk pack",
+    "variety": "Variety pack",
+    "sampler": "Sampler",
+    "mixed": "Mixed materials",
+    "single": "Single spool"
+  },
+  "freshness": {
+    "notChecked": "not checked yet",
+    "justNow": "just now",
+    "minutesAgo": "{count}m ago",
+    "hoursAgo": "{count}h ago",
+    "daysAgo": "{count}d ago"
+  }
+}

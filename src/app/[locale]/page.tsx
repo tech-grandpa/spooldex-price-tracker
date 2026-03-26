@@ -1,4 +1,5 @@
-import Link from "next/link";
+import { getTranslations, setRequestLocale } from "next-intl/server";
+import { Link } from "@/i18n/navigation";
 import { SiteShell } from "@/components/site-shell";
 import { FilamentCard } from "@/components/filament-card";
 import { getHomePageData } from "@/lib/data";
@@ -6,26 +7,30 @@ import { getHomePageData } from "@/lib/data";
 export const dynamic = "force-dynamic";
 
 interface HomePageProps {
+  params: Promise<{ locale: string }>;
   searchParams: Promise<{ q?: string }>;
 }
 
-export default async function HomePage({ searchParams }: HomePageProps) {
+export default async function HomePage({ params, searchParams }: HomePageProps) {
+  const { locale } = await params;
+  setRequestLocale(locale);
   const { q = "" } = await searchParams;
   const data = await getHomePageData(q);
+  const t = await getTranslations("home");
 
   return (
     <SiteShell activeHref="/">
       <section className="grid overflow-hidden rounded-xl border border-border bg-card lg:grid-cols-[1.2fr_0.8fr]">
         <div className="space-y-6 px-6 py-8 sm:px-8">
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Public crawlable catalog · DE market first
+            {t("badge")}
           </p>
           <div className="max-w-3xl space-y-4">
             <h1 className="text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
-              Compare filament offers without waiting for marketplaces to approve you first.
+              {t("title")}
             </h1>
             <p className="max-w-2xl text-base leading-7 text-muted-foreground">
-              Spooldex Tracker starts with open shop coverage, freshness timestamps, and public landing pages that can rank. Phase 1 is about discovery and trust, not gated affiliate APIs.
+              {t("description")}
             </p>
           </div>
 
@@ -34,14 +39,14 @@ export default async function HomePage({ searchParams }: HomePageProps) {
               type="search"
               name="q"
               defaultValue={q}
-              placeholder="Search Bambu PLA Basic, Prusament PETG..."
+              placeholder={t("searchPlaceholder")}
               className="h-11 flex-1 rounded-lg border border-border bg-background px-4 text-sm outline-none ring-0 placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-ring"
             />
             <button
               type="submit"
               className="h-11 rounded-lg bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover"
             >
-              Search live catalog
+              {t("searchButton")}
             </button>
           </form>
         </div>
@@ -49,10 +54,10 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         <div className="border-t border-border bg-secondary/30 px-6 py-8 lg:border-l lg:border-t-0">
           <div className="grid gap-3 sm:grid-cols-2">
             {[
-              { label: "Tracked filaments", value: data.stats.filamentCount },
-              { label: "Filaments with prices", value: data.stats.pricedFilamentCount },
-              { label: "Active shops", value: data.stats.shopCount },
-              { label: "Live offers", value: data.stats.offerCount },
+              { label: t("trackedFilaments"), value: data.stats.filamentCount },
+              { label: t("filamentsWithPrices"), value: data.stats.pricedFilamentCount },
+              { label: t("activeShops"), value: data.stats.shopCount },
+              { label: t("liveOffers"), value: data.stats.offerCount },
             ].map((item) => (
               <div key={item.label} className="rounded-lg border border-border bg-card px-4 py-4">
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{item.label}</p>
@@ -67,14 +72,14 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Filament index</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("filamentIndex")}</p>
               <h2 className="mt-1 text-2xl font-bold tracking-tight">
-                {q ? `Search results for "${q}"` : "Fresh canonical pages"}
+                {q ? t("searchResults", { q }) : t("freshPages")}
               </h2>
             </div>
             {!q && (
               <Link href="/materials" className="text-sm font-semibold text-primary hover:text-primary-hover">
-                Browse materials
+                {t("browseMaterials")}
               </Link>
             )}
           </div>
@@ -87,7 +92,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
         <div className="space-y-6">
           <section className="rounded-xl border border-border bg-card px-5 py-5">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Active retailers</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("activeRetailers")}</p>
             <div className="mt-4 flex flex-wrap gap-2">
               {data.shops.map((shop) => (
                 <Link
@@ -100,12 +105,12 @@ export default async function HomePage({ searchParams }: HomePageProps) {
               ))}
             </div>
             <Link href="/shops" className="mt-4 inline-flex text-sm font-semibold text-primary hover:text-primary-hover">
-              Open shop coverage
+              {t("openShopCoverage")}
             </Link>
           </section>
 
           <section className="rounded-xl border border-border bg-card px-5 py-5">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Popular materials</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("popularMaterials")}</p>
             <div className="mt-4 flex flex-wrap gap-2">
               {data.materials.slice(0, 12).map((material) => (
                 <Link
@@ -120,10 +125,10 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           </section>
 
           <section className="rounded-xl border border-border bg-card px-5 py-5">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Recently refreshed offers</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("recentlyRefreshed")}</p>
             <div className="mt-4 space-y-2">
               {data.recentOffers.map((offer) => (
-                <a
+                <Link
                   key={offer.id}
                   href={`/filaments/${offer.items[0]?.filament.slug ?? ""}`}
                   className="block rounded-lg border border-border bg-background px-4 py-3 transition-colors hover:bg-accent/50"
@@ -131,7 +136,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                   <p className="text-xs font-medium text-muted-foreground">{offer.shop.name}</p>
                   <p className="font-semibold tracking-tight">{offer.title}</p>
                   <p className="mt-1 text-xs text-muted-foreground">{offer.freshnessLabel}</p>
-                </a>
+                </Link>
               ))}
             </div>
           </section>

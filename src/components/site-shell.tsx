@@ -1,19 +1,24 @@
-import Link from "next/link";
 import { clsx } from "clsx";
+import { getTranslations } from "next-intl/server";
+import { Link } from "@/i18n/navigation";
+import { LanguageSwitcher } from "@/components/language-switcher";
 
-const navItems = [
-  { href: "/", label: "Overview" },
-  { href: "/shops", label: "Shops" },
-  { href: "/materials", label: "Materials" },
-];
-
-export function SiteShell({
+export async function SiteShell({
   children,
   activeHref,
 }: {
   children: React.ReactNode;
   activeHref?: string;
 }) {
+  const t = await getTranslations("nav");
+  const tFooter = await getTranslations("footer");
+
+  const navItems = [
+    { href: "/", label: t("overview") },
+    { href: "/shops", label: t("shops") },
+    { href: "/materials", label: t("materials") },
+  ];
+
   return (
     <div className="min-h-screen pb-16">
       <header className="border-b border-border bg-card">
@@ -24,22 +29,25 @@ export function SiteShell({
             </span>
             <span className="text-base font-semibold tracking-tight">Spooldex Tracker</span>
           </Link>
-          <nav className="flex items-center gap-1">
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={clsx(
-                  "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
-                  activeHref && (activeHref === item.href || (item.href !== "/" && activeHref.startsWith(item.href)))
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-secondary hover:text-foreground",
-                )}
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
+          <div className="flex items-center gap-4">
+            <nav className="flex items-center gap-1">
+              {navItems.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={clsx(
+                    "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
+                    activeHref && (activeHref === item.href || (item.href !== "/" && activeHref.startsWith(item.href)))
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-secondary hover:text-foreground",
+                  )}
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+            <LanguageSwitcher />
+          </div>
         </div>
       </header>
 
@@ -47,8 +55,8 @@ export function SiteShell({
 
       <footer className="border-t border-border">
         <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-4 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-6">
-          <p>Built for public discovery first, Spooldex integration second.</p>
-          <p className="text-xs uppercase tracking-widest">Market: DE</p>
+          <p>{tFooter("tagline")}</p>
+          <p className="text-xs uppercase tracking-widest">{tFooter("market")}</p>
         </div>
       </footer>
     </div>

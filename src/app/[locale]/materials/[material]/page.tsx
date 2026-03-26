@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { SiteShell } from "@/components/site-shell";
 import { FilamentCard } from "@/components/filament-card";
 import { getMaterialPageData } from "@/lib/data";
@@ -7,32 +8,35 @@ import { getMaterialPageData } from "@/lib/data";
 export const dynamic = "force-dynamic";
 
 interface MaterialPageProps {
-  params: Promise<{ material: string }>;
+  params: Promise<{ locale: string; material: string }>;
 }
 
 export async function generateMetadata({ params }: MaterialPageProps): Promise<Metadata> {
-  const { material } = await params;
+  const { locale, material } = await params;
   const data = await getMaterialPageData(material);
   if (!data) return {};
+  const t = await getTranslations({ locale, namespace: "materialDetail" });
 
   return {
-    title: `${data.material} filament prices`,
-    description: `Tracked ${data.material} filament offers for Germany.`,
+    title: t("metaTitle", { material: data.material }),
+    description: t("metaDescription", { material: data.material }),
   };
 }
 
 export default async function MaterialPage({ params }: MaterialPageProps) {
-  const { material } = await params;
+  const { locale, material } = await params;
+  setRequestLocale(locale);
   const data = await getMaterialPageData(material);
   if (!data) notFound();
+  const t = await getTranslations("materialDetail");
 
   return (
     <SiteShell activeHref="/materials">
       <section className="rounded-xl border border-border bg-card rounded-[30px] px-6 py-7">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Material page</p>
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("pageLabel")}</p>
         <h1 className="mt-3 text-2xl font-bold tracking-tight">{data.material}</h1>
         <p className="mt-2 max-w-2xl text-muted-foreground">
-          Public comparison pages for {data.material} offers, designed to rank and to help users understand current single-spool and pack pricing.
+          {t("description", { material: data.material })}
         </p>
 
         <div className="mt-6 flex flex-wrap gap-2">

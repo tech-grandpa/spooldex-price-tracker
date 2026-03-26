@@ -1,5 +1,6 @@
-import Link from "next/link";
-import { formatCurrency, packTypeLabel } from "@/lib/utils";
+import { getTranslations, getLocale } from "next-intl/server";
+import { Link } from "@/i18n/navigation";
+import { formatCurrency } from "@/lib/utils";
 
 interface OfferListProps {
   mode?: "shop-first" | "detail-first";
@@ -22,11 +23,15 @@ interface OfferListProps {
   }>;
 }
 
-export function OfferList({ offers, mode = "shop-first" }: OfferListProps) {
+export async function OfferList({ offers, mode = "shop-first" }: OfferListProps) {
+  const locale = await getLocale();
+  const t = await getTranslations("offers");
+  const tPack = await getTranslations("packType");
+
   if (offers.length === 0) {
     return (
       <div className="rounded-xl border border-border bg-card px-5 py-6 text-sm text-muted-foreground">
-        No tracked offers yet for this filament.
+        {t("noOffers")}
       </div>
     );
   }
@@ -34,9 +39,9 @@ export function OfferList({ offers, mode = "shop-first" }: OfferListProps) {
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-card">
       <div className="grid grid-cols-[1.5fr_0.8fr_1fr] gap-3 border-b border-border bg-secondary/50 px-5 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-        <span>Offer</span>
-        <span>Price</span>
-        <span>{mode === "detail-first" ? "Freshness & links" : "Freshness & shop"}</span>
+        <span>{t("offerColumn")}</span>
+        <span>{t("priceColumn")}</span>
+        <span>{mode === "detail-first" ? t("freshnessLinks") : t("freshnessShop")}</span>
       </div>
       <div className="divide-y divide-border">
         {offers.map((offer) => (
@@ -54,19 +59,19 @@ export function OfferList({ offers, mode = "shop-first" }: OfferListProps) {
                 <p className="font-semibold tracking-tight">{offer.title}</p>
               )}
               <p className="mt-1 text-sm text-muted-foreground">
-                {packTypeLabel(offer.packType)}
-                {offer.spoolCount > 1 ? ` · ${offer.spoolCount} spools` : ""}
-                {offer.latestInStock === false ? " · currently out of stock" : ""}
+                {tPack(offer.packType as "bulk" | "variety" | "sampler" | "mixed" | "single")}
+                {offer.spoolCount > 1 ? t("spools", { count: offer.spoolCount }) : ""}
+                {offer.latestInStock === false ? t("outOfStock") : ""}
               </p>
             </div>
             <div className="space-y-1">
               <p className="text-lg font-semibold tabular-nums">
-                {formatCurrency(offer.latestPriceCents, offer.latestCurrency || "EUR")}
+                {formatCurrency(offer.latestPriceCents, offer.latestCurrency || "EUR", locale)}
               </p>
               <p className="text-sm text-muted-foreground">
                 {offer.latestPricePerKgCents != null
-                  ? `${formatCurrency(offer.latestPricePerKgCents, offer.latestCurrency || "EUR")}/kg`
-                  : "per-kg pending"}
+                  ? t("perKg", { price: formatCurrency(offer.latestPricePerKgCents, offer.latestCurrency || "EUR", locale) })
+                  : t("perKgPending")}
               </p>
             </div>
             <div className="space-y-3 text-sm text-muted-foreground">
@@ -77,7 +82,7 @@ export function OfferList({ offers, mode = "shop-first" }: OfferListProps) {
                     href={offer.detailHref}
                     className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-secondary"
                   >
-                    Details
+                    {t("details")}
                   </Link>
                 )}
                 <a
@@ -86,7 +91,7 @@ export function OfferList({ offers, mode = "shop-first" }: OfferListProps) {
                   rel="noopener noreferrer sponsored"
                   className="rounded-lg border border-primary/20 bg-primary-light px-3 py-1.5 text-xs font-semibold text-accent-foreground transition-colors hover:bg-primary/10"
                 >
-                  Go to shop
+                  {t("goToShop")}
                 </a>
               </div>
             </div>

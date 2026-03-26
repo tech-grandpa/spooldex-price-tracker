@@ -1,6 +1,8 @@
-import Link from "next/link";
+import { getTranslations } from "next-intl/server";
+import { Link } from "@/i18n/navigation";
 import { formatCurrency } from "@/lib/utils";
 import { SafeImage } from "@/components/safe-image";
+import { getLocale } from "next-intl/server";
 
 /** Fallback colors by material family so cards without colorHex aren't gray */
 function getMaterialFallbackColor(material?: string | null): string {
@@ -90,7 +92,9 @@ interface FilamentCardProps {
   };
 }
 
-export function FilamentCard({ filament }: FilamentCardProps) {
+export async function FilamentCard({ filament }: FilamentCardProps) {
+  const locale = await getLocale();
+  const t = await getTranslations("cards");
   // Only use the filament's canonical image — offer images are often wrong color
   const imageUrl = filament.imageUrl || null;
 
@@ -122,7 +126,7 @@ export function FilamentCard({ filament }: FilamentCardProps) {
             {filament.series ?? filament.material}
           </h3>
           <p className="text-sm text-muted-foreground">
-            {filament.colorName ?? "Color pending"} · {filament.weightG}g
+            {filament.colorName ?? t("colorPending")} · {filament.weightG}g
           </p>
         </div>
         <div className="flex items-center justify-between gap-3 text-sm">
@@ -130,12 +134,12 @@ export function FilamentCard({ filament }: FilamentCardProps) {
             {filament.bestOffer
               ? filament.bestOffer.packType === "single"
                 ? `${filament.bestOffer.shop.name} · ${filament.bestOffer.freshnessLabel}`
-                : `${filament.bestOffer.spoolCount}x pack · ${filament.bestOffer.shop.name}`
-              : "Live tracker page"}
+                : t("packLabel", { count: filament.bestOffer.spoolCount, shop: filament.bestOffer.shop.name })
+              : t("liveTracker")}
           </span>
           <span className="font-semibold tabular-nums">
             {filament.bestOffer?.latestPriceCents != null
-              ? formatCurrency(filament.bestOffer.latestPriceCents, filament.bestOffer.latestCurrency || "EUR")
+              ? formatCurrency(filament.bestOffer.latestPriceCents, filament.bestOffer.latestCurrency || "EUR", locale)
               : "—"}
           </span>
         </div>

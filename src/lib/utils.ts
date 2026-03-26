@@ -22,13 +22,29 @@ export function buildAbsoluteUrl(pathname: string) {
   return `${base}${pathname.startsWith("/") ? pathname : `/${pathname}`}`;
 }
 
-export function formatCurrency(cents: number | null | undefined, currency = "EUR") {
+export function formatCurrency(cents: number | null | undefined, currency = "EUR", locale = "de-DE") {
   if (cents == null) return "—";
-  return new Intl.NumberFormat("de-DE", {
+  return new Intl.NumberFormat(locale === "de" ? "de-DE" : locale === "en" ? "en-GB" : locale, {
     style: "currency",
     currency,
     maximumFractionDigits: 2,
   }).format(cents / 100);
+}
+
+export function formatDateTime(value: Date | string, locale = "de") {
+  const date = value instanceof Date ? value : new Date(value);
+  return new Intl.DateTimeFormat(locale === "de" ? "de-DE" : "en-GB", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+}
+
+export function formatDateShort(value: Date | string, locale = "de") {
+  const date = value instanceof Date ? value : new Date(value);
+  return new Intl.DateTimeFormat(locale === "de" ? "de-DE" : "en-GB", {
+    day: "numeric",
+    month: "short",
+  }).format(date);
 }
 
 export function formatFreshness(value: Date | string | null | undefined) {
