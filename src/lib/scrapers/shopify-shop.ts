@@ -76,6 +76,20 @@ function parseWeightFromText(text: string): number | null {
   return text.toLowerCase().includes("kg") ? Math.round(value * 1000) : Math.round(value);
 }
 
+/** Noise words to strip from color/series tokens before matching */
+const NOISE_TOKENS = new Set([
+  "formerly", "previously", "original", "new", "old", "edition",
+  "panchromaTM", "polyterraTM", "polyliteTM", "polymakerTM",
+]);
+
+function getDistinctiveTokens(text: string, exclude: Set<string> = new Set()): string[] {
+  return normalizeComparable(text)
+    .split(" ")
+    .filter((t) => t.length > 2 && !NOISE_TOKENS.has(t) && !exclude.has(t))
+    // Strip trademark suffixes
+    .map((t) => t.replace(/TM$/i, ""));
+}
+
 function defaultMatchVariant(
   filament: ScrapeFilamentInput,
   product: ShopifyProduct,
@@ -84,27 +98,24 @@ function defaultMatchVariant(
   const variantParts = [variant.option1, variant.option2, variant.option3].filter(Boolean);
   const variantText = normalizeComparable(variantParts.join(" "));
   const productText = normalizeComparable(product.title);
+  const fullText = `${productText} ${variantText}`;
 
   // Skip 2.85mm
   if (variantText.includes("2.85") || variantText.includes("285")) return false;
 
-  // Color match — require all distinctive tokens
-  const colorTokens = normalizeComparable(filament.colorName)
-    .split(" ")
-    .filter((t) => t.length > 2);
-  if (colorTokens.length > 0) {
-    const fullText = `${productText} ${variantText}`;
-    const matched = colorTokens.filter((t) => fullText.includes(t));
-    if (matched.length < colorTokens.length) return false;
+  // Series match — at least one distinctive series token must appear in product title
+  const seriesTokens = getDistinctiveTokens(filament.series ?? "");
+  if (seriesTokens.length > 0) {
+    const matched = seriesTokens.filter((t) => fullText.includes(t));
+    if (matched.length === 0) return false;
   }
 
-  // Series/material match
-  const seriesTokens = normalizeComparable(filament.series)
-    .split(" ")
-    .filter((t) => t.length > 2);
-  if (seriesTokens.length > 0) {
-    const matched = seriesTokens.filter((t) => productText.includes(t));
-    if (matched.length === 0) return false;
+  // Color match — extract ONLY the distinctive color tokens (strip series prefix + noise)
+  const seriesTokenSet = new Set(seriesTokens);
+  const colorTokens = getDistinctiveTokens(filament.colorName ?? "", seriesTokenSet);
+  if (colorTokens.length > 0) {
+    const matched = colorTokens.filter((t) => fullText.includes(t));
+    if (matched.length < colorTokens.length) return false;
   }
 
   return true;
