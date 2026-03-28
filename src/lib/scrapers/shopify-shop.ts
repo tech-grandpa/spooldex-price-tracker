@@ -124,6 +124,7 @@ function defaultMatchVariant(
 export function createShopifyScraper(config: ShopifyShopConfig): ShopScraper {
   return {
     shopId: config.shopId,
+    trustMatching: true,
 
     supportsFilament: config.supportsFilament ?? ((filament) =>
       filament.brand.toLowerCase() === config.brandName.toLowerCase()

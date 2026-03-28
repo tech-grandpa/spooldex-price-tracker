@@ -34,4 +34,6 @@ export interface ShopScraper {
   supportsFilament?(filament: ScrapeFilamentInput): boolean;
   scoreFilament?(filament: ScrapeFilamentInput): number;
   scrapeFilament?(filament: ScrapeFilamentInput): Promise<ScrapedOfferCandidate[]>;
+  /** If true, the scraper does its own matching — skip isStrongMatch in the main loop */
+  trustMatching?: boolean;
 }

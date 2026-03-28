@@ -230,7 +230,11 @@ export async function run() {
           .filter((candidate, index, list) =>
             list.findIndex((entry) => entry.externalId === candidate.externalId) === index,
           );
-        const strongMatches = rankedCandidates.filter((candidate) => isStrongMatch(filament, query, candidate));
+
+        // If the scraper does its own matching, trust it and skip isStrongMatch
+        const strongMatches = scraper.trustMatching
+          ? rankedCandidates
+          : rankedCandidates.filter((candidate) => isStrongMatch(filament, query, candidate));
 
         if (strongMatches.length === 0) {
           const best = rankedCandidates[0];

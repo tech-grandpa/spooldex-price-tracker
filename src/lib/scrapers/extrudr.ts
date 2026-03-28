@@ -74,6 +74,7 @@ function scoreUrlMatch(url: string, filament: ScrapeFilamentInput): number {
 
 export const extrudrScraper: ShopScraper = {
   shopId: "extrudr-eu",
+  trustMatching: true,
 
   supportsFilament(filament: ScrapeFilamentInput) {
     return filament.brand.toLowerCase() === "extrudr";
