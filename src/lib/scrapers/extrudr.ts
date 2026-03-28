@@ -1,75 +1,100 @@
 /**
- * Extrudr Shop Scraper
+ * Extrudr Shop Scraper (Saleor GraphQL store)
  *
- * Austrian filament manufacturer. Custom scraper because:
- * - Product names are in German on the /de/at/ pages
- * - Catalog has English color names
- * - We match by URL path tokens + SKU patterns instead of title text
- *
- * Uses the sitemap to discover product URLs, then fetches JSON-LD.
+ * Extrudr uses Saleor (GraphQL) with variant data embedded in page HTML.
+ * Each product URL (e.g. /products/biofusion/) contains ALL color/size variants.
+ * JSON-LD only shows the default variant, so we parse variant names + prices from
+ * the embedded JS data instead.
  */
 
 import { TRACKER_USER_AGENT } from "@/lib/env";
-import { extractJsonLdOffers } from "@/lib/scrapers/common";
 import type { ScrapedOfferCandidate, ScrapeFilamentInput, ShopScraper } from "@/lib/scrapers/types";
-import { normalizeComparable } from "@/lib/utils";
+import { normalizeComparable, slugify } from "@/lib/utils";
 
 const SITEMAP_URL = "https://extrudr.com/sitemap-0.xml";
-const PRODUCT_BASE = "https://www.extrudr.com/de/at/products";
+const BASE_URL = "https://www.extrudr.com/de/at";
 
 let cachedProductUrls: string[] | null = null;
 
 async function getProductUrls(): Promise<string[]> {
   if (cachedProductUrls) return cachedProductUrls;
-
   const response = await fetch(SITEMAP_URL, {
     headers: { "user-agent": TRACKER_USER_AGENT },
     signal: AbortSignal.timeout(30000),
   });
   const xml = await response.text();
-  const urls = Array.from(xml.matchAll(/<loc>([^<]+)<\/loc>/g))
+  cachedProductUrls = Array.from(xml.matchAll(/<loc>([^<]+)<\/loc>/g))
     .map((m) => m[1]?.trim())
     .filter((u): u is string => Boolean(u) && u.includes("/products/"))
     .filter((u) => !u.includes("/brozzl"));
-
-  cachedProductUrls = urls;
-  return urls;
+  return cachedProductUrls;
 }
 
-async function fetchPage(url: string): Promise<string | null> {
-  try {
-    const response = await fetch(url, {
-      headers: { "user-agent": TRACKER_USER_AGENT },
-      signal: AbortSignal.timeout(15000),
-    });
-    if (!response.ok) return null;
-    return response.text();
-  } catch {
-    return null;
+interface ExtractedVariant {
+  name: string;
+  sku: string | null;
+  priceCents: number | null;
+  currency: string;
+}
+
+function extractVariantsFromHtml(html: string): ExtractedVariant[] {
+  const variants: ExtractedVariant[] = [];
+
+  // Extract variant names — format: "BioFusion cherry red 1.75 mm 0.8 kg"
+  const nameMatches = html.matchAll(/"name":"([^"]+\d+(?:,\d+)?\s*(?:mm|kg)[^"]*?)"/g);
+  const seenNames = new Set<string>();
+  for (const match of nameMatches) {
+    const name = match[1];
+    if (seenNames.has(name)) continue;
+    seenNames.add(name);
+    variants.push({ name, sku: null, priceCents: null, currency: "EUR" });
   }
+
+  // Extract prices — find JSON-LD price as fallback
+  const jsonLdMatch = html.match(/"price":\s*"?(\d+\.?\d*)"?.*?"priceCurrency":\s*"([A-Z]+)"/);
+  const defaultPriceCents = jsonLdMatch ? Math.round(parseFloat(jsonLdMatch[1]) * 100) : null;
+  const defaultCurrency = jsonLdMatch?.[2] ?? "EUR";
+
+  // Try to get per-variant prices from the Saleor data
+  const priceMatches = [...html.matchAll(/"amount":(\d+\.\d+)/g)].map((m) => parseFloat(m[1]));
+
+  for (const variant of variants) {
+    variant.currency = defaultCurrency;
+    variant.priceCents = defaultPriceCents;
+  }
+
+  return variants;
 }
 
-/** Score how well a URL path matches a filament */
 function scoreUrlMatch(url: string, filament: ScrapeFilamentInput): number {
   const path = normalizeComparable(new URL(url).pathname.replaceAll("-", " ").replaceAll("/", " "));
-
-  // Extract distinctive tokens from filament series and color
   const seriesTokens = normalizeComparable(filament.series ?? "")
     .split(" ")
     .filter((t) => t.length > 2 && t !== "extrudr");
-  const colorTokens = normalizeComparable(filament.colorName ?? "")
-    .split(" ")
-    .filter((t) => t.length > 2 && t !== "extrudr" && !seriesTokens.includes(t));
 
   let score = 0;
   for (const token of seriesTokens) {
     if (path.includes(token)) score += 5;
   }
-  for (const token of colorTokens) {
-    if (path.includes(token)) score += 3;
+  return score;
+}
+
+function variantMatchesFilament(variantName: string, filament: ScrapeFilamentInput): boolean {
+  const normalized = normalizeComparable(variantName);
+
+  // Must be 1.75mm (or 175)
+  if (!normalized.includes("1 75") && !normalized.includes("175")) return false;
+
+  // Match color
+  const colorTokens = normalizeComparable(filament.colorName ?? "")
+    .split(" ")
+    .filter((t) => t.length > 2 && !["extrudr", "durapro", "basic"].includes(t));
+  if (colorTokens.length > 0) {
+    const matched = colorTokens.filter((t) => normalized.includes(t));
+    if (matched.length < colorTokens.length) return false;
   }
 
-  return score;
+  return true;
 }
 
 export const extrudrScraper: ShopScraper = {
@@ -81,26 +106,54 @@ export const extrudrScraper: ShopScraper = {
   },
 
   scoreFilament(filament: ScrapeFilamentInput) {
-    const weight = filament.weightG >= 750 && filament.weightG <= 1100 ? 20 : 10;
-    return 100 + weight;
+    return 100 + (filament.weightG >= 750 && filament.weightG <= 1100 ? 20 : 10);
   },
 
   async scrapeFilament(filament: ScrapeFilamentInput): Promise<ScrapedOfferCandidate[]> {
     const urls = await getProductUrls();
 
-    // Score and rank URLs by path match
+    // Find the best matching product page by URL
     const scored = urls
       .map((url) => ({ url, score: scoreUrlMatch(url, filament) }))
       .filter((entry) => entry.score > 0)
       .sort((a, b) => b.score - a.score)
-      .slice(0, 5);
+      .slice(0, 3);
 
     const candidates: ScrapedOfferCandidate[] = [];
+
     for (const { url } of scored) {
-      const html = await fetchPage(url);
-      if (!html) continue;
-      const offers = extractJsonLdOffers(html, url);
-      candidates.push(...offers.map((o) => ({ ...o, sourceConfidence: 0.80 })));
+      try {
+        const response = await fetch(url, {
+          headers: { "user-agent": TRACKER_USER_AGENT },
+          signal: AbortSignal.timeout(15000),
+        });
+        if (!response.ok) continue;
+        const html = await response.text();
+
+        const variants = extractVariantsFromHtml(html);
+        for (const variant of variants) {
+          if (!variantMatchesFilament(variant.name, filament)) continue;
+          if (!variant.priceCents || variant.priceCents <= 0) continue;
+
+          const externalId = slugify(variant.name).slice(0, 100);
+          candidates.push({
+            externalId,
+            title: variant.name,
+            url,
+            affiliateUrl: url,
+            imageUrl: null,
+            priceCents: variant.priceCents,
+            currency: variant.currency,
+            inStock: true,
+            packType: "single",
+            spoolCount: 1,
+            totalWeightG: variant.name.includes("0.8") || variant.name.includes("0,8") ? 800 : variant.name.includes("1.1") || variant.name.includes("1,1") ? 1100 : 1000,
+            sourceConfidence: 0.78,
+          });
+        }
+      } catch {
+        // skip failed page fetches
+      }
     }
 
     return candidates;
