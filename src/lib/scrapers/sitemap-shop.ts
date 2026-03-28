@@ -227,6 +227,7 @@ export function extractOdooVariantOffers(html: string, pageUrl: string) {
 export function createSitemapProductScraper(config: SitemapShopConfig): ShopScraper {
   return {
     shopId: config.shopId,
+    trustMatching: true,
     supportsFilament: config.supportsFilament,
     scoreFilament: config.scoreFilament,
     queryForFilament: config.queryForFilament || defaultQueryForFilament,
