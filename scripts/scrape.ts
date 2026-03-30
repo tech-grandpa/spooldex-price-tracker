@@ -16,22 +16,9 @@ function getDistinctiveColorTokens(filament: ScrapeFilamentInput) {
   const blockedTokens = new Set([
     ...tokenize(filament.brand),
     ...tokenize(filament.material),
-    "basic",
-    "filament",
-    "matte",
-    "metal",
-    "multi",
-    "plus",
-    "pro",
-    "rapid",
-    "refill",
-    "silk",
-    "spool",
-    "sparkle",
-    "standard",
-    "tough",
+    "basic", "filament", "matte", "metal", "multi", "plus", "pro", "rapid",
+    "refill", "silk", "spool", "sparkle", "standard", "tough",
   ]);
-
   return tokenize(source).filter((token) => token.length > 2 && !blockedTokens.has(token));
 }
 
@@ -44,111 +31,196 @@ function scoreCandidate(query: string, filament: ScrapeFilamentInput, candidate:
   for (const token of tokens) {
     if (normalizedTitle.includes(token)) score += 1;
   }
-
   score += matchedColorTokens.length * 2;
   if (colorTokens.length > 0 && matchedColorTokens.length < colorTokens.length) {
-    // Partial color match — heavily penalize (e.g. "blue" matches but "baby" doesn't)
     score -= 10;
   }
-
   if (filament.bambuCode && normalizedTitle.includes(normalizeComparable(filament.bambuCode))) {
     score += 100;
   }
-
-  if (normalizedTitle.includes("sample")) {
-    score -= 10;
-  }
-
+  if (normalizedTitle.includes("sample")) score -= 10;
   if (candidate.totalWeightG && filament.weightG) {
     const ratio = candidate.totalWeightG / filament.weightG;
     const closenessBoost = Math.max(0, 4 - Math.abs(1 - ratio) * 10);
     score += closenessBoost;
-
     const unitWeightG = candidate.spoolCount > 1 ? Math.round(candidate.totalWeightG / candidate.spoolCount) : candidate.totalWeightG;
     const unitRatio = unitWeightG / filament.weightG;
-    if (unitRatio < 0.75 || unitRatio > 1.25) {
-      score -= 8;
-    }
-
-    if (candidate.packType === "single" && (ratio < 0.75 || ratio > 1.25)) {
-      score -= 8;
-    }
+    if (unitRatio < 0.75 || unitRatio > 1.25) score -= 8;
+    if (candidate.packType === "single" && (ratio < 0.75 || ratio > 1.25)) score -= 8;
   }
-
   return score;
 }
 
-function isStrongMatch(
-  filament: ScrapeFilamentInput,
-  query: string,
-  candidate: ScrapedOfferCandidate,
-) {
+function isStrongMatch(filament: ScrapeFilamentInput, query: string, candidate: ScrapedOfferCandidate) {
   const normalizedTitle = normalizeComparable(candidate.title);
-  if (filament.bambuCode && normalizedTitle.includes(normalizeComparable(filament.bambuCode))) {
-    return true;
-  }
-
-  if (normalizedTitle.includes("sample")) {
-    return false;
-  }
-
+  if (filament.bambuCode && normalizedTitle.includes(normalizeComparable(filament.bambuCode))) return true;
+  if (normalizedTitle.includes("sample")) return false;
   const queryTokens = tokenize(query);
   const matchedTokens = queryTokens.filter((token) => normalizedTitle.includes(token));
-  const matchRatio = queryTokens.length === 0 ? 0 : matchedTokens.length / queryTokens.length;
   const brandTokens = tokenize(filament.brand).filter((token) => token.length > 2);
   const materialTokens = tokenize(filament.material);
   const colorTokens = getDistinctiveColorTokens(filament);
   const brandMatched = brandTokens.length === 0 || brandTokens.some((token) => normalizedTitle.includes(token));
   const materialMatched = materialTokens.length === 0 || materialTokens.some((token) => normalizedTitle.includes(token));
-  // Require ALL distinctive color tokens to match — partial matches cause wrong-color linking
-  // (e.g. "blue" matching "Baby Blue" to "Neon City blue magenta")
   const colorMatched = colorTokens.length === 0 || colorTokens.every((token) => normalizedTitle.includes(token));
-
   if (candidate.totalWeightG && filament.weightG) {
     const ratio = candidate.totalWeightG / filament.weightG;
     const unitWeightG = candidate.spoolCount > 1 ? Math.round(candidate.totalWeightG / candidate.spoolCount) : candidate.totalWeightG;
     const unitRatio = unitWeightG / filament.weightG;
-    if (unitRatio < 0.75 || unitRatio > 1.25) {
-      return false;
-    }
-    if (candidate.packType === "single" && (ratio < 0.75 || ratio > 1.25)) {
-      return false;
-    }
-    if (ratio < 0.5) {
-      return false;
-    }
+    if (unitRatio < 0.75 || unitRatio > 1.25) return false;
+    if (candidate.packType === "single" && (ratio < 0.75 || ratio > 1.25)) return false;
+    if (ratio < 0.5) return false;
   }
-
-  return colorMatched && brandMatched && materialMatched && matchedTokens.length >= 2 && matchRatio >= 0.4;
+  return colorMatched && brandMatched && materialMatched && matchedTokens.length >= 2;
 }
 
 function sortFilamentsForShop(
   scraper: NonNullable<ReturnType<typeof getShopScraper>>,
   filaments: ScrapeFilamentInput[],
   scrapeState: Map<string, Date>,
+  mode: "discover" | "update",
 ) {
+  if (mode === "update") {
+    // Only return filaments that already have offers for this shop (re-scrape existing)
+    return [...filaments]
+      .filter((f) => scrapeState.has(`${scraper.shopId}:${f.id}`))
+      .sort((a, b) => {
+        const aState = scrapeState.get(`${scraper.shopId}:${a.id}`)!;
+        const bState = scrapeState.get(`${scraper.shopId}:${b.id}`)!;
+        return aState.getTime() - bState.getTime(); // oldest first
+      });
+  }
+
+  // Discovery mode: never-scraped first, then by score
   return [...filaments].sort((a, b) => {
     const aState = scrapeState.get(`${scraper.shopId}:${a.id}`);
     const bState = scrapeState.get(`${scraper.shopId}:${b.id}`);
-
-    // Never-scraped filaments always come first
     if (!aState && bState) return -1;
     if (aState && !bState) return 1;
-
-    // Among never-scraped, prefer higher scraper scores
     const aScore = scraper.scoreFilament?.(a) ?? 0;
     const bScore = scraper.scoreFilament?.(b) ?? 0;
     if (aScore !== bScore) return bScore - aScore;
-
-    // Among already-scraped, oldest first
-    if (aState && bState && aState.getTime() !== bState.getTime()) {
-      return aState.getTime() - bState.getTime();
-    }
-
+    if (aState && bState && aState.getTime() !== bState.getTime()) return aState.getTime() - bState.getTime();
     return a.slug.localeCompare(b.slug);
   });
 }
 
+/** Get list of enabled shops */
+export async function getEnabledShops(): Promise<Array<{ id: string; name: string }>> {
+  await ensureDefaultShops();
+  return prisma.shop.findMany({
+    where: { enabled: true },
+    select: { id: true, name: true },
+    orderBy: { name: "asc" },
+  });
+}
+
+/** Run scraping for a single shop */
+export async function runShop(shopId: string, shopName: string, mode: "discover" | "update" = "discover") {
+  const scraper = getShopScraper(shopId);
+  if (!scraper) {
+    console.log(`[${shopName}] no scraper registered — skipping`);
+    return;
+  }
+
+  const limit = SCRAPE_LIMIT_PER_SHOP;
+
+  const [filaments, offerItems] = await Promise.all([
+    prisma.filament.findMany({
+      select: {
+        id: true, slug: true, brand: true, series: true, material: true,
+        colorName: true, weightG: true, imageUrl: true, bambuCode: true, ean: true,
+      },
+    }),
+    prisma.offerItem.findMany({
+      where: { offer: { shopId } },
+      select: {
+        filamentId: true,
+        offer: { select: { latestScrapedAt: true } },
+      },
+    }),
+  ]);
+
+  const scrapeState = new Map<string, Date>();
+  for (const item of offerItems) {
+    if (!item.offer.latestScrapedAt) continue;
+    const key = `${shopId}:${item.filamentId}`;
+    const existing = scrapeState.get(key);
+    if (!existing || existing.getTime() < item.offer.latestScrapedAt.getTime()) {
+      scrapeState.set(key, item.offer.latestScrapedAt);
+    }
+  }
+
+  const supportedFilaments = filaments.filter((f) =>
+    scraper.supportsFilament ? scraper.supportsFilament(f) : true,
+  );
+  const selectedFilaments = sortFilamentsForShop(scraper, supportedFilaments, scrapeState, mode).slice(0, limit);
+
+  if (selectedFilaments.length === 0) {
+    console.log(`[${shopName}] ${mode}: nothing to do`);
+    return;
+  }
+
+  console.log(`[${shopName}] ${mode}: ${selectedFilaments.length} filaments (limit ${limit})`);
+  let matched = 0;
+  let failed = 0;
+
+  for (const filament of selectedFilaments) {
+    const query = scraper.queryForFilament?.(filament) ||
+      [filament.brand, filament.series, filament.material, filament.colorName].filter(Boolean).join(" ");
+
+    try {
+      const candidates = await scrapeShopFilament(shopId, filament);
+      if (candidates.length === 0) continue;
+
+      const rankedCandidates = [...candidates]
+        .sort((a, b) => scoreCandidate(query, filament, b) - scoreCandidate(query, filament, a))
+        .filter((c, i, list) => list.findIndex((e) => e.externalId === c.externalId) === i);
+
+      const strongMatches = scraper.trustMatching
+        ? rankedCandidates
+        : rankedCandidates.filter((c) => isStrongMatch(filament, query, c));
+
+      if (strongMatches.length === 0) continue;
+
+      for (const match of strongMatches.slice(0, 4)) {
+        const cachedImage = await cacheRemoteImageToR2(
+          match.imageUrl || filament.imageUrl,
+          `offers/${shopId}/${match.externalId}.jpg`,
+        );
+
+        await upsertOfferSnapshot({
+          shopId,
+          externalId: match.externalId,
+          filamentId: filament.id,
+          title: match.title,
+          url: match.url,
+          affiliateUrl: match.affiliateUrl,
+          imageUrl: cachedImage || match.imageUrl || filament.imageUrl,
+          priceCents: match.priceCents,
+          currency: match.currency,
+          inStock: match.inStock,
+          packType: match.packType,
+          spoolCount: match.spoolCount,
+          totalWeightG: match.totalWeightG ?? filament.weightG * match.spoolCount,
+          sourceConfidence: match.sourceConfidence,
+          lastSeenAt: new Date(),
+        });
+        matched++;
+      }
+    } catch (error) {
+      failed++;
+      if (failed > 10) {
+        console.error(`[${shopName}] too many failures (${failed}) — aborting shop`);
+        break;
+      }
+    }
+  }
+
+  console.log(`[${shopName}] ${mode} done: ${matched} offers matched, ${failed} failures`);
+}
+
+// CLI entry point
 export async function run() {
   const args = new Map(
     process.argv.slice(2).map((entry) => {
@@ -158,127 +230,13 @@ export async function run() {
   );
 
   const shopFilter = args.get("shop");
-  const limit = Number(args.get("limit") || String(SCRAPE_LIMIT_PER_SHOP));
+  const mode = (args.get("mode") as "discover" | "update") || "discover";
 
-  await ensureDefaultShops();
+  const shops = await getEnabledShops();
+  const filteredShops = shopFilter ? shops.filter((s) => s.id === shopFilter) : shops;
 
-  const [filaments, shops, offerItems] = await Promise.all([
-    prisma.filament.findMany({
-      select: {
-        id: true,
-        slug: true,
-        brand: true,
-        series: true,
-        material: true,
-        colorName: true,
-        weightG: true,
-        imageUrl: true,
-        bambuCode: true,
-        ean: true,
-      },
-    }),
-    prisma.shop.findMany({
-      where: {
-        enabled: true,
-        ...(shopFilter ? { id: shopFilter } : {}),
-      },
-    }),
-    prisma.offerItem.findMany({
-      select: {
-        filamentId: true,
-        offer: {
-          select: {
-            shopId: true,
-            latestScrapedAt: true,
-          },
-        },
-      },
-    }),
-  ]);
-
-  const scrapeState = new Map<string, Date>();
-  for (const item of offerItems) {
-    if (!item.offer.latestScrapedAt) continue;
-    const key = `${item.offer.shopId}:${item.filamentId}`;
-    const existing = scrapeState.get(key);
-    if (!existing || existing.getTime() < item.offer.latestScrapedAt.getTime()) {
-      scrapeState.set(key, item.offer.latestScrapedAt);
-    }
-  }
-
-  for (const shop of shops) {
-    const scraper = getShopScraper(shop.id);
-    if (!scraper) continue;
-
-    const supportedFilaments = filaments.filter((filament) =>
-      scraper.supportsFilament ? scraper.supportsFilament(filament) : true,
-    );
-    const selectedFilaments = sortFilamentsForShop(scraper, supportedFilaments, scrapeState).slice(0, limit);
-
-    console.log(`\n[${shop.name}] scraping ${selectedFilaments.length} filaments (limit ${limit})`);
-
-    for (const filament of selectedFilaments) {
-      const query = scraper.queryForFilament?.(filament) ||
-        [filament.brand, filament.series, filament.material, filament.colorName].filter(Boolean).join(" ");
-
-      try {
-        const candidates = await scrapeShopFilament(shop.id, filament);
-        if (candidates.length === 0) continue;
-
-        const rankedCandidates = [...candidates]
-          .sort((a, b) => scoreCandidate(query, filament, b) - scoreCandidate(query, filament, a))
-          .filter((candidate, index, list) =>
-            list.findIndex((entry) => entry.externalId === candidate.externalId) === index,
-          );
-
-        // If the scraper does its own matching, trust it and skip isStrongMatch
-        const strongMatches = scraper.trustMatching
-          ? rankedCandidates
-          : rankedCandidates.filter((candidate) => isStrongMatch(filament, query, candidate));
-
-        if (strongMatches.length === 0) {
-          const best = rankedCandidates[0];
-          if (best) {
-            console.log(`  skipped weak match for ${filament.slug} -> ${best.title}`);
-          }
-          continue;
-        }
-
-        const selectedMatches = strongMatches.slice(0, 4);
-        for (const match of selectedMatches) {
-          const cachedImage = await cacheRemoteImageToR2(
-            match.imageUrl || filament.imageUrl,
-            `offers/${shop.id}/${match.externalId}.jpg`,
-          );
-
-          await upsertOfferSnapshot({
-            shopId: shop.id,
-            externalId: match.externalId,
-            filamentId: filament.id,
-            title: match.title,
-            url: match.url,
-            affiliateUrl: match.affiliateUrl,
-            imageUrl: cachedImage || match.imageUrl || filament.imageUrl,
-            priceCents: match.priceCents,
-            currency: match.currency,
-            inStock: match.inStock,
-            packType: match.packType,
-            spoolCount: match.spoolCount,
-            totalWeightG: match.totalWeightG ?? filament.weightG * match.spoolCount,
-            sourceConfidence: match.sourceConfidence,
-            lastSeenAt: new Date(),
-          });
-
-          console.log(
-            `  matched ${filament.slug} -> ${match.title}${match.packType !== "single" ? ` (${match.spoolCount}x)` : ""}`,
-          );
-        }
-
-        scrapeState.set(`${shop.id}:${filament.id}`, new Date());
-      } catch (error) {
-        console.error(`  failed ${filament.slug}:`, error);
-      }
-    }
+  for (const shop of filteredShops) {
+    await runShop(shop.id, shop.name, mode);
   }
 }
 
