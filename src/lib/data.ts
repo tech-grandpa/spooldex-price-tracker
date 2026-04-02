@@ -628,30 +628,46 @@ export async function getFilamentDetail(idOrSlug: string) {
 
   const [directOffers, related] = await Promise.all([
     getOffersForFilamentId(filament.id),
-    // Prefer same-brand related, then same-material from other brands
-    Promise.all([
-      prisma.filament.findMany({
+    // Show similar filaments from OTHER brands: same material, similar color — cheapest first
+    (async () => {
+      const colorTokens = normalizeComparable(filament.colorName)
+        .split(" ")
+        .filter((t) => t.length > 2);
+
+      // Find filaments with same material from different brands
+      const candidates = await prisma.filament.findMany({
         where: {
           id: { not: filament.id },
-          brand: filament.brand,
+          brand: { not: filament.brand },
           material: filament.material,
+          ...(filament.colorHex ? { colorHex: { not: null } } : {}),
         },
-        orderBy: { updatedAt: "desc" },
-        take: 6,
-      }),
-      prisma.filament.findMany({
-        where: {
-          id: { not: filament.id },
-          brand: filament.brand,
-          material: { not: filament.material },
-        },
-        orderBy: { updatedAt: "desc" },
-        take: 6,
-      }),
-    ]).then(([sameBrandMaterial, sameBrandOther]) => {
-      const combined = [...sameBrandMaterial, ...sameBrandOther];
-      return combined.slice(0, 6);
-    }),
+        take: 200,
+      });
+
+      // Score by color similarity
+      const scored = candidates.map((c) => {
+        let score = 0;
+        if (filament.colorHex && c.colorHex) {
+          // Simple hex distance
+          const [r1, g1, b1] = [parseInt(filament.colorHex.slice(1, 3), 16), parseInt(filament.colorHex.slice(3, 5), 16), parseInt(filament.colorHex.slice(5, 7), 16)];
+          const [r2, g2, b2] = [parseInt((c.colorHex ?? "#808080").slice(1, 3), 16), parseInt((c.colorHex ?? "#808080").slice(3, 5), 16), parseInt((c.colorHex ?? "#808080").slice(5, 7), 16)];
+          const dist = Math.sqrt((r1 - r2) ** 2 + (g1 - g2) ** 2 + (b1 - b2) ** 2);
+          score += Math.max(0, 100 - dist); // closer color = higher score
+        }
+        // Boost if color name tokens match
+        const cTokens = normalizeComparable(c.colorName).split(" ");
+        for (const t of colorTokens) {
+          if (cTokens.includes(t)) score += 20;
+        }
+        return { filament: c, score };
+      });
+
+      return scored
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 6)
+        .map((s) => s.filament);
+    })(),
   ]);
 
   const offers = directOffers.length > 0 ? directOffers : await getEquivalentOffersForFilament(filament);
