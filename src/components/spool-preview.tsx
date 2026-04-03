@@ -32,12 +32,13 @@ export function SpoolPreview({
   const light = isLightColor(colorHex);
 
   // ── Geometry ──
+  // More tilt (~15° more towards viewer) = wider depth = more filament visible
   const cy = 148;
   const flangeRx = 105;
   const flangeRy = 116;
-  const depth = 36;
+  const depth = 56;
 
-  const frontX = 168;
+  const frontX = 178;
   const backX = frontX - depth;
 
   // Filament outer edge — close to flange but with a small gap
@@ -72,20 +73,22 @@ export function SpoolPreview({
 
   return (
     <svg
-      viewBox="0 0 320 320"
+      viewBox="0 0 340 320"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
       role="img"
       aria-label={`Spool preview: ${brand ?? ""} ${material ?? ""} ${colorName ?? ""}`}
     >
       <defs>
-        {/* ── Filament edge band gradient (cylinder lit from upper-right) ── */}
-        <linearGradient id={`${uid}-fil`} x1="1" y1="0.2" x2="0" y2="0.5">
-          <stop offset="0%" stopColor={darkEdge} />
-          <stop offset="15%" stopColor={colorHex} />
-          <stop offset="40%" stopColor={highlight} />
-          <stop offset="65%" stopColor={colorHex} />
-          <stop offset="85%" stopColor={midDark} />
+        {/* ── Filament edge band gradient — vertical: dark top/bottom, bright middle ── */}
+        <linearGradient id={`${uid}-fil`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={shadow} />
+          <stop offset="15%" stopColor={darkEdge} />
+          <stop offset="35%" stopColor={colorHex} />
+          <stop offset="48%" stopColor={highlight} />
+          <stop offset="55%" stopColor={highlight} />
+          <stop offset="68%" stopColor={colorHex} />
+          <stop offset="85%" stopColor={darkEdge} />
           <stop offset="100%" stopColor={shadow} />
         </linearGradient>
 
@@ -154,8 +157,8 @@ export function SpoolPreview({
         </radialGradient>
 
         {/* ── Strand texture (horizontal lines on edge band) ── */}
-        <pattern id={`${uid}-str`} width="320" height="3" patternUnits="userSpaceOnUse">
-          <line x1="0" y1="1.5" x2="320" y2="1.5"
+        <pattern id={`${uid}-str`} width="340" height="3" patternUnits="userSpaceOnUse">
+          <line x1="0" y1="1.5" x2="340" y2="1.5"
             stroke={light ? "rgba(0,0,0,0.05)" : "rgba(255,255,255,0.05)"} strokeWidth="0.8" />
         </pattern>
 
