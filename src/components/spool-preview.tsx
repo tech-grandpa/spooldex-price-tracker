@@ -268,11 +268,11 @@ export function SpoolPreview({
       <ellipse cx={frontX - 20} cy={cy - 30} rx="50" ry="44"
         fill="white" opacity="0.03" />
 
-      {/* ═══════ "Color may vary" badge ═══════ */}
-      <rect x={frontX - 58} y="278" width="116" height="16" rx="8" fill="#e8e8e8" opacity="0.75" />
-      <text x={frontX} y="289.5" fontSize="8" fill="#888" textAnchor="middle"
+      {/* ═══════ Disclaimer badge ═══════ */}
+      <rect x={frontX - 80} y="278" width="160" height="16" rx="8" fill="#e8e8e8" opacity="0.75" />
+      <text x={frontX} y="289.5" fontSize="7.5" fill="#888" textAnchor="middle"
         fontFamily="system-ui, -apple-system, sans-serif" fontWeight="500">
-        Preview · Color may vary
+        Preview – Real Filament Color may differ.
       </text>
     </svg>
   );
