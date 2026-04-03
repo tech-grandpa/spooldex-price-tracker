@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, normalizeComparable } from "@/lib/utils";
 import { SafeImage } from "@/components/safe-image";
 import { getLocale } from "next-intl/server";
 
@@ -79,6 +79,7 @@ interface FilamentCardProps {
     imageUrl: string | null;
     weightG: number;
     bestOffer?: {
+      title?: string | null;
       imageUrl?: string | null;
       latestPriceCents: number | null;
       latestCurrency: string | null;
@@ -95,8 +96,19 @@ interface FilamentCardProps {
 export async function FilamentCard({ filament }: FilamentCardProps) {
   const locale = await getLocale();
   const t = await getTranslations("cards");
-  // Only use the filament's canonical image — offer images are often wrong color
-  const imageUrl = filament.imageUrl || null;
+  // Use canonical image first, then fall back to bestOffer image if it's color-relevant
+  let imageUrl = filament.imageUrl || null;
+  if (!imageUrl && filament.bestOffer?.imageUrl) {
+    // Only use offer image if the offer title contains the filament's color tokens
+    const offerTitle = normalizeComparable(filament.bestOffer.title ?? "");
+    const colorTokens = normalizeComparable(filament.colorName)
+      .split(" ")
+      .filter((t) => t.length > 2);
+    const allMatch = colorTokens.length === 0 || colorTokens.every((t) => offerTitle.includes(t));
+    if (allMatch) {
+      imageUrl = filament.bestOffer.imageUrl;
+    }
+  }
 
   return (
     <Link
