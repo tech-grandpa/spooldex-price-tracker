@@ -73,7 +73,7 @@ export function ProductGallery({ images, alt, colorHex, brand, material, colorNa
           <img
             src={item.src}
             alt={alt}
-            className="max-h-[340px] w-auto max-w-full rounded-lg object-contain transition-opacity duration-200"
+            className="max-h-[330px] w-auto max-w-full rounded-lg object-contain transition-opacity duration-200"
             onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
           />
         );
@@ -154,7 +154,7 @@ export function ProductGallery({ images, alt, colorHex, brand, material, colorNa
   // Single item — no thumbnails needed
   if (items.length === 1) {
     return (
-      <div className="flex h-full min-h-[360px] items-center justify-center bg-secondary p-4">
+      <div className="flex h-[360px] items-center justify-center bg-secondary p-4">
         {renderMain(active)}
       </div>
     );
@@ -163,8 +163,8 @@ export function ProductGallery({ images, alt, colorHex, brand, material, colorNa
   // Multiple items — gallery with thumbnails
   return (
     <div className="flex h-full min-h-[360px] flex-col">
-      {/* Main display */}
-      <div className="relative flex flex-1 items-center justify-center bg-secondary p-4">
+      {/* Main display — fixed height to prevent layout jumps */}
+      <div className="relative flex h-[360px] shrink-0 items-center justify-center bg-secondary p-4">
         {renderMain(active)}
 
         {/* Navigation arrows */}
