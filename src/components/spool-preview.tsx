@@ -129,11 +129,11 @@ export function SpoolPreview({
           <stop offset="100%" stopColor="#7a6040" />
         </linearGradient>
 
-        {/* ── Dark gap (shadow in flange overhang area) ── */}
-        <linearGradient id={`${uid}-gap`} x1="1" y1="0" x2="0" y2="0">
-          <stop offset="0%" stopColor="#4a3d28" />
-          <stop offset="50%" stopColor="#2a2018" />
-          <stop offset="100%" stopColor="#1a1510" />
+        {/* ── Gap between flange and filament (same cardboard tone, slightly darker) ── */}
+        <linearGradient id={`${uid}-gap`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#8a7048" />
+          <stop offset="50%" stopColor="#9a8058" />
+          <stop offset="100%" stopColor="#8a7048" />
         </linearGradient>
 
         {/* ── Hub (inner plastic piece) ── */}
