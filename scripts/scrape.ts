@@ -177,9 +177,21 @@ export async function runShop(shopId: string, shopName: string, mode: "discover"
         .sort((a, b) => scoreCandidate(query, filament, b) - scoreCandidate(query, filament, a))
         .filter((c, i, list) => list.findIndex((e) => e.externalId === c.externalId) === i);
 
-      const strongMatches = scraper.trustMatching
+      let strongMatches = scraper.trustMatching
         ? rankedCandidates
         : rankedCandidates.filter((c) => isStrongMatch(filament, query, c));
+
+      // For multi-brand retailers: verify the offer title contains the filament's brand
+      // (prevents "Elegoo PETG Red" matching "CR-3D PETG Rot" from 3Dmensionals)
+      if (scraper.multiRetailer && filament.brand) {
+        const brandTokens = normalizeComparable(filament.brand).split(" ").filter((t) => t.length > 2);
+        if (brandTokens.length > 0) {
+          strongMatches = strongMatches.filter((c) => {
+            const titleLower = normalizeComparable(c.title);
+            return brandTokens.some((t) => titleLower.includes(t));
+          });
+        }
+      }
 
       if (strongMatches.length === 0) continue;
 

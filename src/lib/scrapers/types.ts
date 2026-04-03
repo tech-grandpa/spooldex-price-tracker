@@ -36,4 +36,6 @@ export interface ShopScraper {
   scrapeFilament?(filament: ScrapeFilamentInput): Promise<ScrapedOfferCandidate[]>;
   /** If true, the scraper does its own matching — skip isStrongMatch in the main loop */
   trustMatching?: boolean;
+  /** If true, this shop carries multiple brands — offers must match the filament's brand */
+  multiRetailer?: boolean;
 }
