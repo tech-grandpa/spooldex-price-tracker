@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { formatCurrency, normalizeComparable } from "@/lib/utils";
 import { SafeImage } from "@/components/safe-image";
+import { SpoolPreview } from "@/components/spool-preview";
 import { getLocale } from "next-intl/server";
 
 /** Fallback colors by material family so cards without colorHex aren't gray */
@@ -122,6 +123,17 @@ export async function FilamentCard({ filament }: FilamentCardProps) {
             alt={`${filament.brand} ${filament.series ?? filament.material} ${filament.colorName ?? ""}`}
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
           />
+        ) : filament.colorHex ? (
+          <div className="flex h-full w-full items-center justify-center bg-secondary p-2">
+            <SpoolPreview
+              colorHex={filament.colorHex}
+              brand={filament.brand}
+              material={filament.material}
+              colorName={filament.colorName ?? undefined}
+              weight={`${filament.weightG}g`}
+              className="h-full w-auto max-w-full"
+            />
+          </div>
         ) : (
           <ColorSwatchPreview colorHex={filament.colorHex} colorName={filament.colorName} material={filament.material} />
         )}

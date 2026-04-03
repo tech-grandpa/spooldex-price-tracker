@@ -1,30 +1,40 @@
 "use client";
 
 import { useState } from "react";
+import { SpoolPreview } from "@/components/spool-preview";
 
 interface ProductGalleryProps {
   images: string[];
   alt: string;
   colorHex?: string | null;
+  brand?: string;
+  material?: string;
+  colorName?: string | null;
+  weight?: string;
 }
 
-export function ProductGallery({ images, alt, colorHex }: ProductGalleryProps) {
+export function ProductGallery({ images, alt, colorHex, brand, material, colorName, weight }: ProductGalleryProps) {
   const [activeIndex, setActiveIndex] = useState(0);
 
-  // No images — show color swatch or placeholder
+  // No images — show spool preview if we have a color, otherwise placeholder
   if (images.length === 0) {
-    return (
-      <div
-        className={colorHex ? "flex h-full min-h-[360px] items-center justify-center" : "flex h-full min-h-[360px] items-center justify-center bg-gradient-to-br from-secondary to-muted/30"}
-        style={colorHex ? { background: colorHex } : undefined}
-      >
-        {colorHex ? (
-          <div className="h-32 w-32 rounded-full border-[14px] opacity-20"
-            style={{ borderColor: "rgba(255,255,255,0.2)" }}
+    if (colorHex) {
+      return (
+        <div className="flex h-full min-h-[360px] items-center justify-center bg-secondary p-6">
+          <SpoolPreview
+            colorHex={colorHex}
+            brand={brand}
+            material={material}
+            colorName={colorName ?? undefined}
+            weight={weight}
+            className="h-[320px] w-auto"
           />
-        ) : (
-          <span className="text-lg font-medium text-muted-foreground">No preview</span>
-        )}
+        </div>
+      );
+    }
+    return (
+      <div className="flex h-full min-h-[360px] items-center justify-center bg-gradient-to-br from-secondary to-muted/30">
+        <span className="text-lg font-medium text-muted-foreground">No preview</span>
       </div>
     );
   }

@@ -148,6 +148,10 @@ export default async function FilamentPage({ params }: FilamentPageProps) {
             images={data.images}
             alt={`${data.filament.brand} ${data.filament.colorName ?? ""}`}
             colorHex={data.filament.colorHex}
+            brand={data.filament.brand}
+            material={data.filament.material}
+            colorName={data.filament.colorName}
+            weight={`${data.filament.weightG}g`}
           />
         </div>
         <div className="space-y-6 px-6 py-7 sm:px-8">
