@@ -268,11 +268,11 @@ export function SpoolPreview({
       <ellipse cx={frontX - 20} cy={cy - 30} rx="50" ry="44"
         fill="white" opacity="0.03" />
 
-      {/* ═══════ "Generated preview" badge ═══════ */}
-      <rect x={frontX - 53} y="278" width="106" height="16" rx="8" fill="#e8e8e8" opacity="0.75" />
+      {/* ═══════ "Color may vary" badge ═══════ */}
+      <rect x={frontX - 58} y="278" width="116" height="16" rx="8" fill="#e8e8e8" opacity="0.75" />
       <text x={frontX} y="289.5" fontSize="8" fill="#888" textAnchor="middle"
         fontFamily="system-ui, -apple-system, sans-serif" fontWeight="500">
-        Generated preview
+        Preview · Color may vary
       </text>
     </svg>
   );
