@@ -198,46 +198,9 @@ export function SpoolPreview({
         <ellipse cx={cx} cy={cy} rx={coreRx + 10} ry={coreRy + 11} fill={`url(#${uid}-flange-face)`} />
       </g>
 
-      {/* Filament viewing windows (cutouts showing filament inside) */}
-      {/* Window top-right */}
-      <ellipse cx={cx + 32} cy={cy - 58} rx="16" ry="12" fill={colorHex} opacity="0.6" />
-      <ellipse cx={cx + 32} cy={cy - 58} rx="16" ry="12" fill="none" stroke="#a68b5b" strokeWidth="0.7" />
-      {/* Window right */}
-      <ellipse cx={cx + 48} cy={cy + 5} rx="12" ry="16" fill={colorHex} opacity="0.55" />
-      <ellipse cx={cx + 48} cy={cy + 5} rx="12" ry="16" fill="none" stroke="#a68b5b" strokeWidth="0.7" />
-      {/* Window bottom-right */}
-      <ellipse cx={cx + 30} cy={cy + 62} rx="16" ry="12" fill={darken(colorHex, 0.06)} opacity="0.55" />
-      <ellipse cx={cx + 30} cy={cy + 62} rx="16" ry="12" fill="none" stroke="#a68b5b" strokeWidth="0.7" />
-
       {/* ════ Core hole ════ */}
       <ellipse cx={cx} cy={cy} rx={coreRx} ry={coreRy} fill={`url(#${uid}-core)`} />
       <ellipse cx={cx} cy={cy} rx={coreRx} ry={coreRy} fill="none" stroke="#333" strokeWidth="0.8" />
-
-      {/* ════ Label on front flange (left half, avoiding windows/core) ════ */}
-      <g clipPath={`url(#${uid}-fc)`}>
-        <rect x={cx - 82} y={cy - 42} width="74" height="62" rx="5" fill={`url(#${uid}-lbl)`} opacity="0.85" />
-
-        <text x={cx - 45} y={cy - 24} fontSize="11" fontWeight="700" fill={labelText}
-          textAnchor="middle" fontFamily="system-ui, -apple-system, sans-serif" opacity="0.95">
-          {trunc(brand ?? "Filament", 12)}
-        </text>
-        <text x={cx - 45} y={cy - 10} fontSize="9" fontWeight="600" fill={labelSub}
-          textAnchor="middle" fontFamily="system-ui, -apple-system, sans-serif" opacity="0.9">
-          {trunc(material ?? "", 14)}
-        </text>
-        {colorName && (
-          <text x={cx - 45} y={cy + 3} fontSize="8" fill={labelSub}
-            textAnchor="middle" fontFamily="system-ui, -apple-system, sans-serif" opacity="0.85">
-            {trunc(colorName, 16)}
-          </text>
-        )}
-        {weight && (
-          <text x={cx - 45} y={cy + 14} fontSize="7.5" fontWeight="500" fill={labelSub}
-            textAnchor="middle" fontFamily="system-ui, -apple-system, sans-serif" opacity="0.8">
-            {weight}
-          </text>
-        )}
-      </g>
 
       {/* ════ Front flange highlight (subtle light reflection top-left) ════ */}
       <ellipse cx={cx - 20} cy={cy - 30} rx="40" ry="35" fill="white" opacity="0.05" />
