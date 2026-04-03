@@ -41,9 +41,9 @@ export function SpoolPreview({
   const frontX = 178;
   const backX = frontX - depth;
 
-  // Filament outer edge — close to flange but with a small gap
-  const filOuterRx = flangeRx - 6;
-  const filOuterRy = flangeRy - 7;
+  // Filament outer edge — noticeably inside the flange so cardboard rim is visible
+  const filOuterRx = flangeRx - 14;
+  const filOuterRy = flangeRy - 16;
 
   // Core hub on front face (the inner plastic piece that holds the filament)
   const hubRx = 30;
