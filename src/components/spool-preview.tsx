@@ -2,6 +2,8 @@ import { darken, lighten, isLightColor } from "@/lib/color-utils";
 
 interface SpoolPreviewProps {
   colorHex: string;
+  /** Multiple colors for gradient/multicolor filaments */
+  colorHexes?: string[];
   brand?: string;
   material?: string;
   colorName?: string;
@@ -19,17 +21,20 @@ interface SpoolPreviewProps {
  */
 export function SpoolPreview({
   colorHex,
+  colorHexes,
   brand,
   material,
   colorName,
   weight,
   className,
 }: SpoolPreviewProps) {
-  const shadow = darken(colorHex, 0.28);
-  const darkEdge = darken(colorHex, 0.16);
-  const midDark = darken(colorHex, 0.06);
-  const highlight = lighten(colorHex, 0.14);
-  const light = isLightColor(colorHex);
+  const isMulti = colorHexes && colorHexes.length > 1;
+  const primaryColor = colorHex;
+  const shadow = darken(primaryColor, 0.28);
+  const darkEdge = darken(primaryColor, 0.16);
+  const midDark = darken(primaryColor, 0.06);
+  const highlight = lighten(primaryColor, 0.14);
+  const light = isLightColor(primaryColor);
 
   // ── Geometry ──
   // More tilt (~15° more towards viewer) = wider depth = more filament visible
@@ -100,24 +105,47 @@ export function SpoolPreview({
     >
       <defs>
         {/* ── Filament edge band gradient — vertical: dark top/bottom, bright middle ── */}
-        <linearGradient id={`${uid}-fil`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={shadow} />
-          <stop offset="15%" stopColor={darkEdge} />
-          <stop offset="35%" stopColor={colorHex} />
-          <stop offset="48%" stopColor={highlight} />
-          <stop offset="55%" stopColor={highlight} />
-          <stop offset="68%" stopColor={colorHex} />
-          <stop offset="85%" stopColor={darkEdge} />
-          <stop offset="100%" stopColor={shadow} />
-        </linearGradient>
+        {isMulti ? (
+          <linearGradient id={`${uid}-fil`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={darken(colorHexes[0], 0.25)} />
+            <stop offset="8%" stopColor={colorHexes[0]} />
+            {colorHexes.map((c, i) => {
+              const pos = 10 + (i / (colorHexes.length - 1)) * 80;
+              return <stop key={i} offset={`${pos}%`} stopColor={c} />;
+            })}
+            <stop offset="92%" stopColor={colorHexes[colorHexes.length - 1]} />
+            <stop offset="100%" stopColor={darken(colorHexes[colorHexes.length - 1], 0.25)} />
+          </linearGradient>
+        ) : (
+          <linearGradient id={`${uid}-fil`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={shadow} />
+            <stop offset="15%" stopColor={darkEdge} />
+            <stop offset="35%" stopColor={primaryColor} />
+            <stop offset="48%" stopColor={highlight} />
+            <stop offset="55%" stopColor={highlight} />
+            <stop offset="68%" stopColor={primaryColor} />
+            <stop offset="85%" stopColor={darkEdge} />
+            <stop offset="100%" stopColor={shadow} />
+          </linearGradient>
+        )}
 
-        {/* ── Filament front face (wound layers — radial shading) ── */}
-        <radialGradient id={`${uid}-filf`} cx="0.44" cy="0.44" r="0.56">
-          <stop offset="0%" stopColor={highlight} stopOpacity="0.4" />
-          <stop offset="40%" stopColor={colorHex} />
-          <stop offset="75%" stopColor={midDark} />
-          <stop offset="100%" stopColor={darkEdge} />
-        </radialGradient>
+        {/* ── Filament front face (wound layers) ── */}
+        {isMulti ? (
+          <radialGradient id={`${uid}-filf`} cx="0.44" cy="0.44" r="0.56">
+            {colorHexes.map((c, i) => {
+              const pos = 10 + (i / (colorHexes.length - 1)) * 80;
+              return <stop key={i} offset={`${pos}%`} stopColor={c} />;
+            })}
+            <stop offset="100%" stopColor={darken(colorHexes[colorHexes.length - 1], 0.15)} />
+          </radialGradient>
+        ) : (
+          <radialGradient id={`${uid}-filf`} cx="0.44" cy="0.44" r="0.56">
+            <stop offset="0%" stopColor={highlight} stopOpacity="0.4" />
+            <stop offset="40%" stopColor={primaryColor} />
+            <stop offset="75%" stopColor={midDark} />
+            <stop offset="100%" stopColor={darkEdge} />
+          </radialGradient>
+        )}
 
         {/* ── Wound strand rings on front face ── */}
         <radialGradient id={`${uid}-rings`} cx="0.5" cy="0.5" r="0.5">
