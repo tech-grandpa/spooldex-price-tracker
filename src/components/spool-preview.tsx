@@ -59,21 +59,11 @@ export function SpoolPreview({
     fCx: number, bCx: number,
     arcRx: number, arcRy: number,
   ): string {
-    // The top/bottom connections curve slightly outward to maintain
-    // the cylindrical illusion (a straight line looks "flat").
-    const midX = (fCx + bCx) / 2;
-    const bulgTop = cy - arcRy - 4;  // curve outward (upward) at top
-    const bulgBot = cy + arcRy + 4;  // curve outward (downward) at bottom
     return [
       `M ${fCx} ${cy - arcRy}`,
-      // Left arc of front ellipse: top → bottom
       `A ${arcRx} ${arcRy} 0 0 0 ${fCx} ${cy + arcRy}`,
-      // Bottom connection: slight outward curve
-      `Q ${midX} ${bulgBot} ${bCx} ${cy + arcRy}`,
-      // Left arc of back ellipse: bottom → top
+      `L ${bCx} ${cy + arcRy}`,
       `A ${arcRx} ${arcRy} 0 0 1 ${bCx} ${cy - arcRy}`,
-      // Top connection: slight outward curve
-      `Q ${midX} ${bulgTop} ${fCx} ${cy - arcRy}`,
       `Z`,
     ].join(" ");
   }
