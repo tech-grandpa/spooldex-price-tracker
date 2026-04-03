@@ -5,6 +5,7 @@ import { SiteShell } from "@/components/site-shell";
 import { OfferList } from "@/components/offer-list";
 import { FilamentCard } from "@/components/filament-card";
 import { SafeImage } from "@/components/safe-image";
+import { ProductGallery } from "@/components/product-gallery";
 import { getFilamentDetail } from "@/lib/data";
 import { formatCurrency, formatDateTime, formatDateShort } from "@/lib/utils";
 
@@ -142,39 +143,12 @@ export default async function FilamentPage({ params }: FilamentPageProps) {
       />
 
       <section className="overflow-hidden rounded-xl border border-border bg-card lg:grid lg:grid-cols-[0.95fr_1.05fr]">
-        <div className="border-b border-border bg-secondary lg:border-b-0 lg:border-r">
-          {data.images.length > 0 ? (
-            <div className="flex flex-col">
-              <SafeImage
-                src={data.images[0]}
-                alt={`${data.filament.brand} ${data.filament.colorName ?? ""}`}
-                className="h-[320px] w-full object-cover"
-              />
-              {data.images.length > 1 && (
-                <div className="flex gap-px border-t border-border [&:empty]:hidden">
-                  {data.images.slice(1, 4).map((url, i) => (
-                    <SafeImage
-                      key={i}
-                      src={url}
-                      alt={`${data.filament.brand} ${data.filament.colorName ?? ""} — image ${i + 2}`}
-                      className="h-24 flex-1 object-cover border-r border-border last:border-r-0"
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-          ) : data.filament.colorHex ? (
-            <div className="flex h-[320px] w-full items-center justify-center" style={{ background: data.filament.colorHex }}>
-              <div
-                className="h-36 w-36 rounded-full border-[16px] opacity-20"
-                style={{ borderColor: "rgba(255,255,255,0.2)" }}
-              />
-            </div>
-          ) : (
-            <div className="flex h-[320px] w-full items-center justify-center bg-gradient-to-br from-secondary to-muted/30">
-              <span className="text-lg font-medium text-muted-foreground">{t("noPreview")}</span>
-            </div>
-          )}
+        <div className="border-b border-border lg:border-b-0 lg:border-r">
+          <ProductGallery
+            images={data.images}
+            alt={`${data.filament.brand} ${data.filament.colorName ?? ""}`}
+            colorHex={data.filament.colorHex}
+          />
         </div>
         <div className="space-y-6 px-6 py-7 sm:px-8">
           <div>
