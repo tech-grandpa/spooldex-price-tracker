@@ -12,12 +12,10 @@ interface SpoolPreviewProps {
 /**
  * 3/4 perspective SVG spool — stacked tilted ellipses.
  *
- * Viewing angle: slightly from the right, so the LEFT edge
- * of the spool is visible. Structure back→front:
- *   1. Back flange disc (offset left, mostly hidden)
- *   2. Filament band visible on the LEFT between the two discs
- *   3. Front flange disc (the main face we see)
- *   4. Core hole in center of front face
+ * Viewed from slightly right: front flange faces viewer,
+ * filament band visible on left edge between two thin flanges.
+ * Front face shows large ring of wound filament (the color!)
+ * between the core hub and the flange rim.
  */
 export function SpoolPreview({
   colorHex,
@@ -27,57 +25,50 @@ export function SpoolPreview({
   weight,
   className,
 }: SpoolPreviewProps) {
-  const shadow = darken(colorHex, 0.25);
-  const darkEdge = darken(colorHex, 0.15);
-  const highlight = lighten(colorHex, 0.12);
+  const shadow = darken(colorHex, 0.28);
+  const darkEdge = darken(colorHex, 0.16);
+  const midDark = darken(colorHex, 0.06);
+  const highlight = lighten(colorHex, 0.14);
   const light = isLightColor(colorHex);
 
   // ── Geometry ──
-  const cy = 148;           // shared center Y
-  const flangeRx = 100;     // flange ellipse horizontal radius
-  const flangeRy = 112;     // flange ellipse vertical radius
-  const depth = 38;         // total spool width (offset between front & back)
+  const cy = 148;
+  const flangeRx = 105;
+  const flangeRy = 116;
+  const depth = 36;
 
-  // Front flange is to the right, back flange offset to the left
-  const frontX = 165;
+  const frontX = 168;
   const backX = frontX - depth;
 
-  // Filament is slightly narrower than flanges (sits inside the rims)
-  const filRx = flangeRx - 8;
-  const filRy = flangeRy - 9;
+  // Filament outer edge — close to flange but with a small gap
+  const filOuterRx = flangeRx - 6;
+  const filOuterRy = flangeRy - 7;
 
-  // Core hole
-  const coreRx = 24;
-  const coreRy = 27;
+  // Core hub on front face (the inner plastic piece that holds the filament)
+  const hubRx = 30;
+  const hubRy = 33;
+
+  // Core hole (the actual center hole)
+  const coreRx = 20;
+  const coreRy = 22;
 
   const uid = `spr-${colorHex.replace("#", "")}`;
 
-  /**
-   * Left-side crescent: the visible band on the LEFT edge
-   * between a front ellipse and a back ellipse.
-   *
-   * Draws: front-top → LEFT arc to front-bottom →
-   *        line to back-bottom → LEFT arc back to back-top → close
-   */
   function leftCrescent(
     fCx: number, bCx: number,
     arcRx: number, arcRy: number,
   ): string {
     return [
-      // Start at top of front ellipse
       `M ${fCx} ${cy - arcRy}`,
-      // Arc counter-clockwise (left side) to bottom of front ellipse
       `A ${arcRx} ${arcRy} 0 0 0 ${fCx} ${cy + arcRy}`,
-      // Line across to bottom of back ellipse
       `L ${bCx} ${cy + arcRy}`,
-      // Arc clockwise (left side, going up) to top of back ellipse
       `A ${arcRx} ${arcRy} 0 0 1 ${bCx} ${cy - arcRy}`,
       `Z`,
     ].join(" ");
   }
 
-  const filamentBand = leftCrescent(frontX, backX, filRx, filRy);
-  const flangeGap = leftCrescent(frontX, backX, flangeRx, flangeRy);
+  const filamentBand = leftCrescent(frontX, backX, filOuterRx, filOuterRy);
+  const flangeRim = leftCrescent(frontX, backX, flangeRx, flangeRy);
 
   return (
     <svg
@@ -88,107 +79,176 @@ export function SpoolPreview({
       aria-label={`Spool preview: ${brand ?? ""} ${material ?? ""} ${colorName ?? ""}`}
     >
       <defs>
-        {/* Filament band gradient (cylinder lighting, light from right) */}
-        <linearGradient id={`${uid}-fil`} x1="1" y1="0" x2="0" y2="0">
+        {/* ── Filament edge band gradient (cylinder lit from upper-right) ── */}
+        <linearGradient id={`${uid}-fil`} x1="1" y1="0.2" x2="0" y2="0.5">
           <stop offset="0%" stopColor={darkEdge} />
-          <stop offset="20%" stopColor={colorHex} />
-          <stop offset="45%" stopColor={highlight} />
-          <stop offset="70%" stopColor={colorHex} />
+          <stop offset="15%" stopColor={colorHex} />
+          <stop offset="40%" stopColor={highlight} />
+          <stop offset="65%" stopColor={colorHex} />
+          <stop offset="85%" stopColor={midDark} />
           <stop offset="100%" stopColor={shadow} />
         </linearGradient>
 
-        {/* Cardboard edge */}
+        {/* ── Filament front face (wound layers — radial shading) ── */}
+        <radialGradient id={`${uid}-filf`} cx="0.44" cy="0.44" r="0.56">
+          <stop offset="0%" stopColor={highlight} stopOpacity="0.4" />
+          <stop offset="40%" stopColor={colorHex} />
+          <stop offset="75%" stopColor={midDark} />
+          <stop offset="100%" stopColor={darkEdge} />
+        </radialGradient>
+
+        {/* ── Wound strand rings on front face ── */}
+        <radialGradient id={`${uid}-rings`} cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0%" stopColor={light ? "rgba(0,0,0,0.03)" : "rgba(255,255,255,0.03)"} />
+          <stop offset="50%" stopColor="transparent" />
+          <stop offset="51%" stopColor={light ? "rgba(0,0,0,0.02)" : "rgba(255,255,255,0.02)"} />
+          <stop offset="100%" stopColor="transparent" />
+        </radialGradient>
+
+        {/* ── Cardboard flange rim (edge strip) ── */}
         <linearGradient id={`${uid}-ce`} x1="1" y1="0" x2="0" y2="0">
-          <stop offset="0%" stopColor="#a68b5b" />
-          <stop offset="30%" stopColor="#c4a574" />
-          <stop offset="60%" stopColor="#b8996a" />
+          <stop offset="0%" stopColor="#b09060" />
+          <stop offset="30%" stopColor="#c8aa78" />
+          <stop offset="60%" stopColor="#bfa06a" />
           <stop offset="100%" stopColor="#8a7048" />
         </linearGradient>
 
-        {/* Front flange face */}
-        <radialGradient id={`${uid}-ff`} cx="0.42" cy="0.42" r="0.6">
+        {/* ── Front flange face (thin rim ring, mostly filament visible) ── */}
+        <radialGradient id={`${uid}-ff`} cx="0.44" cy="0.44" r="0.58">
           <stop offset="0%" stopColor="#dcc8a4" />
           <stop offset="50%" stopColor="#c4a574" />
           <stop offset="100%" stopColor="#a68b5b" />
         </radialGradient>
 
-        {/* Back flange face */}
-        <linearGradient id={`${uid}-bf`} x1="0" y1="0" x2="1" y2="1">
+        {/* ── Back flange face ── */}
+        <linearGradient id={`${uid}-bf`} x1="0.2" y1="0" x2="0.8" y2="1">
           <stop offset="0%" stopColor="#b09060" />
-          <stop offset="100%" stopColor="#8a7048" />
+          <stop offset="100%" stopColor="#7a6040" />
         </linearGradient>
 
-        {/* Dark gap (shadow where flange meets filament) */}
+        {/* ── Dark gap (shadow in flange overhang area) ── */}
         <linearGradient id={`${uid}-gap`} x1="1" y1="0" x2="0" y2="0">
           <stop offset="0%" stopColor="#4a3d28" />
           <stop offset="50%" stopColor="#2a2018" />
           <stop offset="100%" stopColor="#1a1510" />
         </linearGradient>
 
-        {/* Core hole */}
-        <radialGradient id={`${uid}-core`} cx="0.4" cy="0.4" r="0.6">
-          <stop offset="0%" stopColor="#2a2a2a" />
-          <stop offset="100%" stopColor="#111" />
+        {/* ── Hub (inner plastic piece) ── */}
+        <radialGradient id={`${uid}-hub`} cx="0.42" cy="0.42" r="0.6">
+          <stop offset="0%" stopColor="#d0d0d0" />
+          <stop offset="60%" stopColor="#b0b0b0" />
+          <stop offset="100%" stopColor="#909090" />
         </radialGradient>
 
-        {/* Drop shadow */}
+        {/* ── Core hole ── */}
+        <radialGradient id={`${uid}-core`} cx="0.38" cy="0.38" r="0.65">
+          <stop offset="0%" stopColor="#2a2a2a" />
+          <stop offset="100%" stopColor="#0a0a0a" />
+        </radialGradient>
+
+        {/* ── Drop shadow ── */}
         <radialGradient id={`${uid}-shd`} cx="0.5" cy="0.5" r="0.5">
-          <stop offset="0%" stopColor="#000" stopOpacity="0.18" />
-          <stop offset="70%" stopColor="#000" stopOpacity="0.04" />
+          <stop offset="0%" stopColor="#000" stopOpacity="0.16" />
+          <stop offset="60%" stopColor="#000" stopOpacity="0.04" />
           <stop offset="100%" stopColor="#000" stopOpacity="0" />
         </radialGradient>
 
-        {/* Strand texture */}
-        <pattern id={`${uid}-str`} width="320" height="3.5" patternUnits="userSpaceOnUse">
-          <line x1="0" y1="1.75" x2="320" y2="1.75"
-            stroke={light ? "rgba(0,0,0,0.05)" : "rgba(255,255,255,0.05)"} strokeWidth="1" />
+        {/* ── Strand texture (horizontal lines on edge band) ── */}
+        <pattern id={`${uid}-str`} width="320" height="3" patternUnits="userSpaceOnUse">
+          <line x1="0" y1="1.5" x2="320" y2="1.5"
+            stroke={light ? "rgba(0,0,0,0.05)" : "rgba(255,255,255,0.05)"} strokeWidth="0.8" />
         </pattern>
+
+        {/* ── Clip paths ── */}
+        <clipPath id={`${uid}-front-clip`}>
+          <ellipse cx={frontX} cy={cy} rx={flangeRx} ry={flangeRy} />
+        </clipPath>
+
+        {/* Filament donut clip: outer filament ring minus hub */}
+        <clipPath id={`${uid}-fil-ring`}>
+          <path d={`
+            M ${frontX - filOuterRx} ${cy}
+            A ${filOuterRx} ${filOuterRy} 0 1 1 ${frontX + filOuterRx} ${cy}
+            A ${filOuterRx} ${filOuterRy} 0 1 1 ${frontX - filOuterRx} ${cy}
+            Z
+            M ${frontX - hubRx} ${cy}
+            A ${hubRx} ${hubRy} 0 1 0 ${frontX + hubRx} ${cy}
+            A ${hubRx} ${hubRy} 0 1 0 ${frontX - hubRx} ${cy}
+            Z
+          `} fillRule="evenodd" />
+        </clipPath>
       </defs>
 
       {/* ═══════ Drop shadow ═══════ */}
-      <ellipse cx={frontX - 8} cy="298" rx="85" ry="12" fill={`url(#${uid}-shd)`} />
+      <ellipse cx={frontX - 6} cy="300" rx="90" ry="10" fill={`url(#${uid}-shd)`} />
 
       {/* ═══════ 1. Back flange face ═══════ */}
       <ellipse cx={backX} cy={cy} rx={flangeRx} ry={flangeRy} fill={`url(#${uid}-bf)`} />
       <ellipse cx={backX} cy={cy} rx={flangeRx} ry={flangeRy}
-        fill="none" stroke="#7a6040" strokeWidth="0.8" />
+        fill="none" stroke="#6a5438" strokeWidth="0.6" />
 
-      {/* ═══════ 2. Dark gap (full flange width, visible at top & bottom) ═══════ */}
-      <path d={flangeGap} fill={`url(#${uid}-gap)`} />
+      {/* ═══════ 2. Dark gap (flange overhang visible at top & bottom) ═══════ */}
+      <path d={flangeRim} fill={`url(#${uid}-gap)`} />
 
-      {/* ═══════ 3. FILAMENT BAND — the main colored area! ═══════ */}
+      {/* ═══════ 3. FILAMENT EDGE BAND ═══════ */}
       <path d={filamentBand} fill={`url(#${uid}-fil)`} />
       <path d={filamentBand} fill={`url(#${uid}-str)`} />
+      {/* Soft edge highlights */}
+      <line x1={frontX} y1={cy - filOuterRy} x2={backX} y2={cy - filOuterRy}
+        stroke={light ? "rgba(0,0,0,0.06)" : "rgba(255,255,255,0.06)"} strokeWidth="0.5" />
+      <line x1={frontX} y1={cy + filOuterRy} x2={backX} y2={cy + filOuterRy}
+        stroke="rgba(0,0,0,0.08)" strokeWidth="0.5" />
 
-      {/* ═══════ 4. Front flange face ═══════ */}
+      {/* ═══════ 4. Front flange — thin cardboard rim ring ═══════ */}
+      {/* Outer flange face */}
       <ellipse cx={frontX} cy={cy} rx={flangeRx} ry={flangeRy} fill={`url(#${uid}-ff)`} />
       <ellipse cx={frontX} cy={cy} rx={flangeRx} ry={flangeRy}
-        fill="none" stroke="#a68b5b" strokeWidth="1" />
+        fill="none" stroke="#a08860" strokeWidth="0.8" />
 
-      {/* Subtle cardboard texture on front face */}
-      <ellipse cx={frontX} cy={cy} rx={flangeRx - 15} ry={flangeRy - 17}
-        fill="none" stroke="#b8996a" strokeWidth="0.3" opacity="0.25" />
+      {/* ═══════ 5. FILAMENT FACE — the big colored ring on the front ═══════ */}
+      {/* This is the main visual: wound filament visible between rim and hub */}
+      <g clipPath={`url(#${uid}-fil-ring)`}>
+        <ellipse cx={frontX} cy={cy} rx={filOuterRx} ry={filOuterRy}
+          fill={`url(#${uid}-filf)`} />
+        {/* Concentric wound rings */}
+        <ellipse cx={frontX} cy={cy} rx={filOuterRx - 10} ry={filOuterRy - 11}
+          fill="none" stroke={light ? "rgba(0,0,0,0.04)" : "rgba(255,255,255,0.04)"}
+          strokeWidth="0.6" />
+        <ellipse cx={frontX} cy={cy} rx={filOuterRx - 22} ry={filOuterRy - 24}
+          fill="none" stroke={light ? "rgba(0,0,0,0.03)" : "rgba(255,255,255,0.03)"}
+          strokeWidth="0.6" />
+        <ellipse cx={frontX} cy={cy} rx={filOuterRx - 35} ry={filOuterRy - 38}
+          fill="none" stroke={light ? "rgba(0,0,0,0.025)" : "rgba(255,255,255,0.025)"}
+          strokeWidth="0.6" />
+        <ellipse cx={frontX} cy={cy} rx={filOuterRx - 48} ry={filOuterRy - 52}
+          fill="none" stroke={light ? "rgba(0,0,0,0.02)" : "rgba(255,255,255,0.02)"}
+          strokeWidth="0.6" />
+        {/* Highlight arc (light reflection across wound layers) */}
+        <ellipse cx={frontX - 12} cy={cy - 14} rx={filOuterRx - 20} ry={filOuterRy - 22}
+          fill="white" opacity="0.04" />
+      </g>
 
-      {/* ═══════ 5. Filament ring visible through front face ═══════ */}
-      {/* (the donut of filament visible between core hole and inner flange wall) */}
-      <ellipse cx={frontX} cy={cy} rx={filRx} ry={filRy}
-        fill={colorHex} opacity="0.35" />
-      {/* Cover center with flange color (the inner hub area) */}
-      <ellipse cx={frontX} cy={cy} rx={coreRx + 14} ry={coreRy + 16}
-        fill={`url(#${uid}-ff)`} />
+      {/* ═══════ 6. Flange rim line (inner edge of the cardboard) ═══════ */}
+      <ellipse cx={frontX} cy={cy} rx={filOuterRx} ry={filOuterRy}
+        fill="none" stroke="#b8996a" strokeWidth="0.6" opacity="0.5" />
 
-      {/* ═══════ 6. Core hole ═══════ */}
+      {/* ═══════ 7. Hub (inner plastic piece) ═══════ */}
+      <ellipse cx={frontX} cy={cy} rx={hubRx} ry={hubRy} fill={`url(#${uid}-hub)`} />
+      <ellipse cx={frontX} cy={cy} rx={hubRx} ry={hubRy}
+        fill="none" stroke="#888" strokeWidth="0.5" />
+
+      {/* ═══════ 8. Core hole ═══════ */}
       <ellipse cx={frontX} cy={cy} rx={coreRx} ry={coreRy} fill={`url(#${uid}-core)`} />
       <ellipse cx={frontX} cy={cy} rx={coreRx} ry={coreRy}
-        fill="none" stroke="#333" strokeWidth="0.8" />
+        fill="none" stroke="#333" strokeWidth="0.6" />
 
-      {/* ═══════ 7. Light highlight on front face ═══════ */}
-      <ellipse cx={frontX - 15} cy={cy - 25} rx="40" ry="35"
-        fill="white" opacity="0.045" />
+      {/* ═══════ 9. Overall light highlight ═══════ */}
+      <ellipse cx={frontX - 20} cy={cy - 30} rx="50" ry="44"
+        fill="white" opacity="0.03" />
 
       {/* ═══════ "Generated preview" badge ═══════ */}
-      <rect x={frontX - 53} y="276" width="106" height="16" rx="8" fill="#e8e8e8" opacity="0.8" />
-      <text x={frontX} y="287.5" fontSize="8" fill="#888" textAnchor="middle"
+      <rect x={frontX - 53} y="278" width="106" height="16" rx="8" fill="#e8e8e8" opacity="0.75" />
+      <text x={frontX} y="289.5" fontSize="8" fill="#888" textAnchor="middle"
         fontFamily="system-ui, -apple-system, sans-serif" fontWeight="500">
         Generated preview
       </text>
