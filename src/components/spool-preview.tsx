@@ -59,11 +59,30 @@ export function SpoolPreview({
     fCx: number, bCx: number,
     arcRx: number, arcRy: number,
   ): string {
+    // Pure arcs, no straight lines. The crescent is the area between
+    // the left halves of two ellipses with different centers.
+    //
+    // Path: front-left-bottom → front-left-top (left half of front ellipse)
+    //       → back-left-top → back-left-bottom (left half of back ellipse, reversed)
+    //
+    // Using the leftmost points of each ellipse as intermediaries creates
+    // smooth meeting points with no visible straight segments.
+    const fLeft = fCx - arcRx;
+    const bLeft = bCx - arcRx;
+
     return [
-      `M ${fCx} ${cy - arcRy}`,
-      `A ${arcRx} ${arcRy} 0 0 0 ${fCx} ${cy + arcRy}`,
-      `L ${bCx} ${cy + arcRy}`,
+      // Start at bottom of front ellipse
+      `M ${fCx} ${cy + arcRy}`,
+      // Left half of front ellipse: bottom → left → top
+      `A ${arcRx} ${arcRy} 0 0 1 ${fLeft} ${cy}`,
+      `A ${arcRx} ${arcRy} 0 0 1 ${fCx} ${cy - arcRy}`,
+      // Connect to back ellipse top (short arc instead of line)
       `A ${arcRx} ${arcRy} 0 0 1 ${bCx} ${cy - arcRy}`,
+      // Left half of back ellipse: top → left → bottom
+      `A ${arcRx} ${arcRy} 0 0 0 ${bLeft} ${cy}`,
+      `A ${arcRx} ${arcRy} 0 0 0 ${bCx} ${cy + arcRy}`,
+      // Connect back to front bottom (short arc instead of line)
+      `A ${arcRx} ${arcRy} 0 0 1 ${fCx} ${cy + arcRy}`,
       `Z`,
     ].join(" ");
   }
