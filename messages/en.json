@@ -1,7 +1,7 @@
 {
   "metadata": {
     "title": "Spooldex Tracker",
-    "description": "Open filament price tracking for Germany. Compare current offers, track freshness, and discover where to buy popular 3D printing materials."
+    "description": "Open filament price tracking across Europe and beyond. Compare current offers, track freshness, and discover where to buy popular 3D printing materials."
   },
   "nav": {
     "overview": "Overview",
@@ -13,7 +13,7 @@
     "market": "Market: DE"
   },
   "home": {
-    "badge": "Public crawlable catalog · DE market first",
+    "badge": "Open filament price tracker · DE market first",
     "title": "Compare filament offers without waiting for marketplaces to approve you first.",
     "description": "Spooldex Tracker starts with open shop coverage, freshness timestamps, and public landing pages that can rank. Phase 1 is about discovery and trust, not gated affiliate APIs.",
     "searchPlaceholder": "Search Bambu PLA Basic, Prusament PETG...",
@@ -32,7 +32,7 @@
     "recentlyRefreshed": "Recently refreshed offers"
   },
   "materialsIndex": {
-    "metaTitle": "Filament materials tracked in Germany",
+    "metaTitle": "Filament materials tracked by Spooldex",
     "metaDescription": "Browse tracked filament materials first, then drill into live price pages for the exact material you want.",
     "pageLabel": "Material index",
     "title": "Start with the material, then drill into the exact spool.",
@@ -44,15 +44,15 @@
   },
   "materialDetail": {
     "metaTitle": "{material} filament prices",
-    "metaDescription": "Tracked {material} filament offers for Germany.",
+    "metaDescription": "Tracked {material} filament offers and price comparisons.",
     "pageLabel": "Material page",
     "description": "Public comparison pages for {material} offers, designed to rank and to help users understand current single-spool and pack pricing."
   },
   "brand": {
     "metaTitle": "{brand} filament prices",
-    "metaDescription": "Live offer tracking for {brand} filament in Germany.",
+    "metaDescription": "Live offer tracking for {brand} filament across all regions.",
     "pageLabel": "Brand page",
-    "description": "Crawlable offer pages for {brand}, grouped into one place so users can compare materials and colors without bouncing between shop search pages."
+    "description": "All tracked offers for {brand}, grouped into one place so you can compare materials and colors without bouncing between shop search pages."
   },
   "filament": {
     "metaDescriptionWithPrice": "Compare current {brand} offers starting at {price}.",
@@ -82,11 +82,11 @@
     "noPreview": "No preview"
   },
   "shopsIndex": {
-    "metaTitle": "Tracked filament shops in Germany",
+    "metaTitle": "Tracked filament shops",
     "metaDescription": "See which filament retailers are currently covered by Spooldex Tracker, how many live offers each shop contributes, and when they were last checked.",
     "pageLabel": "Shop coverage",
-    "title": "All shops currently tracked for Germany.",
-    "description": "This index shows every live retailer in the current crawl set, including how broad the coverage is and whether pack offers are present.",
+    "title": "All shops currently tracked by Spooldex.",
+    "description": "This index shows every live retailer we track, including how broad the coverage is and whether pack offers are available.",
     "trackedShops": "Tracked shops",
     "liveOffers": "Live offers",
     "packOffers": "Pack offers",
@@ -95,12 +95,12 @@
     "filaments": "Filaments",
     "bestPrice": "Best visible price",
     "noOffers": "No priced offers published yet for this shop.",
-    "latestCrawl": "Latest crawl results",
+    "latestCrawl": "Latest price updates",
     "recentlyRefreshed": "Recently refreshed offers"
   },
   "shopDetail": {
     "metaTitle": "{shop} filament offers",
-    "metaDescription": "Tracked offers currently visible on {shop} for the German market.",
+    "metaDescription": "Tracked offers currently visible on {shop} with live price updates.",
     "pageLabel": "Retailer page",
     "description": "Offer freshness and landing pages from {shop}, refreshed by the tracker worker and surfaced for public discovery.",
     "liveOffers": "Live offers",

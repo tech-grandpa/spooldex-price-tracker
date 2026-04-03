@@ -1,7 +1,7 @@
 {
   "metadata": {
     "title": "Spooldex Tracker",
-    "description": "Offene Filament-Preisübersicht für Deutschland. Aktuelle Angebote vergleichen, Aktualität prüfen und beliebte 3D-Druck-Materialien finden."
+    "description": "Offene Filament-Preisübersicht für Europa und darüber hinaus. Aktuelle Angebote vergleichen, Aktualität prüfen und beliebte 3D-Druck-Materialien finden."
   },
   "nav": {
     "overview": "Übersicht",
@@ -13,7 +13,7 @@
     "market": "Markt: DE"
   },
   "home": {
-    "badge": "Öffentlich durchsuchbarer Katalog · DE-Markt",
+    "badge": "Offener Filament-Preistracker · DE-Markt",
     "title": "Filament-Angebote vergleichen, ohne auf Marktplatz-Freigaben zu warten.",
     "description": "Spooldex Tracker startet mit offener Shop-Abdeckung, Aktualitäts-Timestamps und öffentlichen Landingpages, die ranken können. Phase 1 dreht sich um Auffindbarkeit und Vertrauen – nicht um geschlossene Affiliate-APIs.",
     "searchPlaceholder": "Suche Bambu PLA Basic, Prusament PETG...",
@@ -32,7 +32,7 @@
     "recentlyRefreshed": "Zuletzt aktualisierte Angebote"
   },
   "materialsIndex": {
-    "metaTitle": "Filament-Materialien für Deutschland",
+    "metaTitle": "Filament-Materialien bei Spooldex",
     "metaDescription": "Erst das Material wählen, dann zu den aktuellen Preisseiten für das gewünschte Filament navigieren.",
     "pageLabel": "Material-Index",
     "title": "Erst das Material wählen, dann zur passenden Spule.",
@@ -44,15 +44,15 @@
   },
   "materialDetail": {
     "metaTitle": "{material}-Filament-Preise",
-    "metaDescription": "Erfasste {material}-Filament-Angebote für Deutschland.",
+    "metaDescription": "Erfasste {material}-Filament-Angebote und Preisvergleiche.",
     "pageLabel": "Material-Seite",
     "description": "Öffentliche Vergleichsseiten für {material}-Angebote – konzipiert zum Ranken und um aktuelle Einzelspulen- und Paketpreise transparent zu machen."
   },
   "brand": {
     "metaTitle": "{brand} Filament-Preise",
-    "metaDescription": "Live-Angebotsverfolgung für {brand}-Filament in Deutschland.",
+    "metaDescription": "Live-Angebotsverfolgung für {brand}-Filament in allen Regionen.",
     "pageLabel": "Marken-Seite",
-    "description": "Durchsuchbare Angebotsseiten für {brand}, an einem Ort gebündelt – so lassen sich Materialien und Farben vergleichen, ohne zwischen Shop-Suchseiten zu springen."
+    "description": "Alle erfassten Angebote für {brand}, an einem Ort gebündelt – so lassen sich Materialien und Farben vergleichen, ohne zwischen Shop-Suchseiten zu springen."
   },
   "filament": {
     "metaDescriptionWithPrice": "Aktuelle {brand}-Angebote vergleichen – ab {price}.",
@@ -82,11 +82,11 @@
     "noPreview": "Keine Vorschau"
   },
   "shopsIndex": {
-    "metaTitle": "Erfasste Filament-Shops in Deutschland",
+    "metaTitle": "Erfasste Filament-Shops",
     "metaDescription": "Alle Filament-Händler, die Spooldex Tracker aktuell abdeckt – mit Angebotsanzahl und letztem Prüfzeitpunkt.",
     "pageLabel": "Shop-Abdeckung",
-    "title": "Alle derzeit für Deutschland erfassten Shops.",
-    "description": "Dieser Index zeigt jeden Live-Händler im aktuellen Crawl-Set, inklusive Abdeckungsbreite und verfügbarer Paketangebote.",
+    "title": "Alle derzeit von Spooldex erfassten Shops.",
+    "description": "Dieser Index zeigt jeden Live-Händler, den wir verfolgen, inklusive Abdeckungsbreite und verfügbarer Paketangebote.",
     "trackedShops": "Erfasste Shops",
     "liveOffers": "Aktuelle Angebote",
     "packOffers": "Paket-Angebote",
@@ -95,7 +95,7 @@
     "filaments": "Filamente",
     "bestPrice": "Bester sichtbarer Preis",
     "noOffers": "Noch keine Angebote mit Preisen für diesen Shop.",
-    "latestCrawl": "Neueste Crawl-Ergebnisse",
+    "latestCrawl": "Neueste Preisupdates",
     "recentlyRefreshed": "Zuletzt aktualisierte Angebote"
   },
   "shopDetail": {
