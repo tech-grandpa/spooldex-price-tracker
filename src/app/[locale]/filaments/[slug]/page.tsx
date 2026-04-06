@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getTranslations, setRequestLocale, getLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { SiteShell } from "@/components/site-shell";
 import { OfferList } from "@/components/offer-list";
 import { FilamentCard } from "@/components/filament-card";
-import { SafeImage } from "@/components/safe-image";
 import { ProductGallery } from "@/components/product-gallery";
 import { getFilamentDetail } from "@/lib/data";
 import { formatCurrency, formatDateTime, formatDateShort } from "@/lib/utils";

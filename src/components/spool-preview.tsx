@@ -25,7 +25,6 @@ export function SpoolPreview({
   brand,
   material,
   colorName,
-  weight,
   className,
 }: SpoolPreviewProps) {
   const isMulti = colorHexes && colorHexes.length > 1;

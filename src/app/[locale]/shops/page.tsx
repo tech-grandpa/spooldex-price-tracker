@@ -4,7 +4,6 @@ import { Link } from "@/i18n/navigation";
 import { SiteShell } from "@/components/site-shell";
 import { RegionFilter } from "@/components/region-filter";
 import { getShopsIndexPageData, REGIONS } from "@/lib/data";
-import { formatCurrency } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 

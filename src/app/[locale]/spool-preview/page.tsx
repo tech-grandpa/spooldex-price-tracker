@@ -4,7 +4,27 @@ import { SpoolPreview } from "@/components/spool-preview";
 
 export const dynamic = "force-dynamic";
 
-const SAMPLES = [
+type SingleColorSample = {
+  colorHex: string;
+  brand: string;
+  material: string;
+  colorName: string;
+  weight: string;
+  colorHexes?: undefined;
+};
+
+type MultiColorSample = {
+  colorHex: string;
+  colorHexes: string[];
+  brand: string;
+  material: string;
+  colorName: string;
+  weight: string;
+};
+
+type Sample = SingleColorSample | MultiColorSample;
+
+const SAMPLES: Sample[] = [
   { colorHex: "#7A8B6F", brand: "ColorFabb", material: "PLA", colorName: "Green Grey", weight: "2000g" },
   { colorHex: "#FF69B4", brand: "Elegoo", material: "PETG Pro", colorName: "Pink", weight: "1000g" },
   { colorHex: "#1A1A1A", brand: "Bambu Lab", material: "PLA Basic", colorName: "Black", weight: "1000g" },
@@ -50,7 +70,7 @@ export default async function SpoolPreviewPage({
             <div className="flex h-64 items-center justify-center bg-secondary p-4">
               <SpoolPreview
                 colorHex={sample.colorHex}
-                colorHexes={"colorHexes" in sample ? (sample as any).colorHexes : undefined}
+                colorHexes={sample.colorHexes}
                 brand={sample.brand}
                 material={sample.material}
                 colorName={sample.colorName}
@@ -62,9 +82,9 @@ export default async function SpoolPreviewPage({
               <p className="text-sm font-semibold">{sample.brand}</p>
               <p className="text-xs text-muted-foreground">{sample.material} · {sample.colorName} · {sample.weight}</p>
               <div className="mt-1 flex items-center gap-2">
-                {"colorHexes" in sample ? (
+                {sample.colorHexes ? (
                   <div className="flex -space-x-1">
-                    {((sample as any).colorHexes as string[]).map((c: string, i: number) => (
+                    {sample.colorHexes.map((c, i) => (
                       <div key={i} className="h-4 w-4 rounded-full border border-border" style={{ background: c }} />
                     ))}
                   </div>
