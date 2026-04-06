@@ -55,6 +55,8 @@ model Offer {
   spoolCount            Int             @default(1)
   totalWeightG          Int?
   imageUrl              String?
+  etag                  String?
+  lastModifiedHeader    String?
   lastCheckedAt         DateTime?
   lastSeenAt            DateTime?
   scrapeStatus          String          @default("pending")

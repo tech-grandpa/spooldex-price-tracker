@@ -1,8 +1,15 @@
 import { load } from "cheerio";
 import { TRACKER_USER_AGENT } from "@/lib/env";
 import { waitForPoliteTurn } from "@/lib/robots";
+import { fetchTextConditionally } from "@/lib/scrapers/http";
+import { selectMatchingCandidate } from "@/lib/scrapers/offer-matching";
 import { buildCandidate } from "@/lib/scrapers/common";
-import type { ScrapedOfferCandidate, ScrapeFilamentInput, ShopScraper } from "@/lib/scrapers/types";
+import type {
+  ExistingOfferInput,
+  ScrapedOfferCandidate,
+  ScrapeFilamentInput,
+  ShopScraper,
+} from "@/lib/scrapers/types";
 import { normalizeComparable } from "@/lib/utils";
 
 interface BambuJsonLdVariant {
@@ -231,6 +238,40 @@ function scoreVariant(filament: ScrapeFilamentInput, variant: ParsedBambuVariant
 
 export const bambuStoreScraper: ShopScraper = {
   shopId: "bambu-store-eu",
+  async confirmOffer(offer: ExistingOfferInput) {
+    const fetched = await fetchTextConditionally(offer.url, {
+      etag: offer.etag,
+      lastModifiedHeader: offer.lastModifiedHeader,
+    });
+    if (!fetched) {
+      return {
+        status: "unmatched" as const,
+        etag: offer.etag,
+        lastModifiedHeader: offer.lastModifiedHeader,
+      };
+    }
+
+    if (fetched.status === "not-modified") {
+      return fetched;
+    }
+
+    const candidates = parseBambuProductPageVariants(fetched.body, offer.url).map((entry) => entry.candidate);
+    const candidate = selectMatchingCandidate(offer, candidates);
+    if (!candidate) {
+      return {
+        status: "unmatched" as const,
+        etag: fetched.etag,
+        lastModifiedHeader: fetched.lastModifiedHeader,
+      };
+    }
+
+    return {
+      status: "updated" as const,
+      candidate,
+      etag: fetched.etag,
+      lastModifiedHeader: fetched.lastModifiedHeader,
+    };
+  },
   supportsFilament(filament) {
     return filament.brand === "Bambu Lab" && Boolean(filament.bambuCode);
   },

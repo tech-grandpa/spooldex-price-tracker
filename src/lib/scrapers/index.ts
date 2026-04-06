@@ -1,6 +1,9 @@
 import { chromium } from "playwright";
 import { TRACKER_USER_AGENT } from "@/lib/env";
 import { waitForPoliteTurn } from "@/lib/robots";
+import { extractJsonLdOffers } from "@/lib/scrapers/common";
+import { selectMatchingCandidate } from "@/lib/scrapers/offer-matching";
+import { fetchTextConditionally } from "@/lib/scrapers/http";
 import {
   colorFabbScraper,
   formFuturaScraper,
@@ -13,7 +16,13 @@ import { threeDjakeScraper } from "@/lib/scrapers/three-djake";
 import { polymakerScraper } from "@/lib/scrapers/polymaker";
 import { protoPastaScraper } from "@/lib/scrapers/proto-pasta";
 import { extrudrScraper } from "@/lib/scrapers/extrudr";
-import type { ScrapedOfferCandidate, ScrapeFilamentInput, ShopScraper } from "@/lib/scrapers/types";
+import type {
+  ExistingOfferInput,
+  OfferConfirmationResult,
+  ScrapedOfferCandidate,
+  ScrapeFilamentInput,
+  ShopScraper,
+} from "@/lib/scrapers/types";
 
 const SCRAPERS: Record<string, ShopScraper> = {
   [threeDjakeScraper.shopId]: threeDjakeScraper,
@@ -82,4 +91,59 @@ export async function scrapeShopFilament(shopId: string, filament: ScrapeFilamen
 
   const query = scraper.queryForFilament?.(filament) || defaultQueryForFilament(filament);
   return scrapeSearchResults(scraper, query);
+}
+
+export async function confirmShopOffer(
+  shopId: string,
+  offer: ExistingOfferInput,
+): Promise<OfferConfirmationResult> {
+  const scraper = getShopScraper(shopId);
+  if (!scraper) {
+    return {
+      status: "unmatched",
+      etag: offer.etag,
+      lastModifiedHeader: offer.lastModifiedHeader,
+    };
+  }
+
+  if (scraper.confirmOffer) {
+    return scraper.confirmOffer(offer);
+  }
+
+  const fetched = await fetchTextConditionally(offer.url, {
+    etag: offer.etag,
+    lastModifiedHeader: offer.lastModifiedHeader,
+  });
+
+  if (!fetched) {
+    return {
+      status: "unmatched",
+      etag: offer.etag,
+      lastModifiedHeader: offer.lastModifiedHeader,
+    };
+  }
+
+  if (fetched.status === "not-modified") {
+    return fetched;
+  }
+
+  const candidates = scraper.parseOfferPage
+    ? scraper.parseOfferPage(fetched.body, offer)
+    : extractJsonLdOffers(fetched.body, offer.url);
+  const candidate = selectMatchingCandidate(offer, candidates);
+
+  if (!candidate) {
+    return {
+      status: "unmatched",
+      etag: fetched.etag,
+      lastModifiedHeader: fetched.lastModifiedHeader,
+    };
+  }
+
+  return {
+    status: "updated",
+    candidate,
+    etag: fetched.etag,
+    lastModifiedHeader: fetched.lastModifiedHeader,
+  };
 }

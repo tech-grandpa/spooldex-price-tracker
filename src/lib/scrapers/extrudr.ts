@@ -8,11 +8,17 @@
  */
 
 import { TRACKER_USER_AGENT } from "@/lib/env";
-import type { ScrapedOfferCandidate, ScrapeFilamentInput, ShopScraper } from "@/lib/scrapers/types";
+import { fetchTextConditionally } from "@/lib/scrapers/http";
+import { selectMatchingCandidate } from "@/lib/scrapers/offer-matching";
+import type {
+  ExistingOfferInput,
+  ScrapedOfferCandidate,
+  ScrapeFilamentInput,
+  ShopScraper,
+} from "@/lib/scrapers/types";
 import { normalizeComparable, slugify } from "@/lib/utils";
 
 const SITEMAP_URL = "https://extrudr.com/sitemap-0.xml";
-const BASE_URL = "https://www.extrudr.com/de/at";
 
 let cachedProductUrls: string[] | null = null;
 
@@ -56,8 +62,6 @@ function extractVariantsFromHtml(html: string): ExtractedVariant[] {
   const defaultCurrency = jsonLdMatch?.[2] ?? "EUR";
 
   // Try to get per-variant prices from the Saleor data
-  const priceMatches = [...html.matchAll(/"amount":(\d+\.\d+)/g)].map((m) => parseFloat(m[1]));
-
   for (const variant of variants) {
     variant.currency = defaultCurrency;
     variant.priceCents = defaultPriceCents;
@@ -100,6 +104,56 @@ function variantMatchesFilament(variantName: string, filament: ScrapeFilamentInp
 export const extrudrScraper: ShopScraper = {
   shopId: "extrudr-eu",
   trustMatching: true,
+  async confirmOffer(offer: ExistingOfferInput) {
+    const fetched = await fetchTextConditionally(offer.url, {
+      etag: offer.etag,
+      lastModifiedHeader: offer.lastModifiedHeader,
+    });
+    if (!fetched) {
+      return {
+        status: "unmatched" as const,
+        etag: offer.etag,
+        lastModifiedHeader: offer.lastModifiedHeader,
+      };
+    }
+
+    if (fetched.status === "not-modified") {
+      return fetched;
+    }
+
+    const candidates = extractVariantsFromHtml(fetched.body)
+      .filter((variant) => variant.priceCents && variant.priceCents > 0)
+      .map((variant) => ({
+        externalId: slugify(variant.name).slice(0, 100),
+        title: variant.name,
+        url: offer.url,
+        affiliateUrl: offer.url,
+        imageUrl: offer.imageUrl,
+        priceCents: variant.priceCents,
+        currency: variant.currency,
+        inStock: true,
+        packType: offer.packType,
+        spoolCount: offer.spoolCount,
+        totalWeightG: offer.totalWeightG,
+        sourceConfidence: offer.sourceConfidence ?? 0.78,
+      }));
+    const candidate = selectMatchingCandidate(offer, candidates);
+
+    if (!candidate) {
+      return {
+        status: "unmatched" as const,
+        etag: fetched.etag,
+        lastModifiedHeader: fetched.lastModifiedHeader,
+      };
+    }
+
+    return {
+      status: "updated" as const,
+      candidate,
+      etag: fetched.etag,
+      lastModifiedHeader: fetched.lastModifiedHeader,
+    };
+  },
 
   supportsFilament(filament: ScrapeFilamentInput) {
     return filament.brand.toLowerCase() === "extrudr";

@@ -229,6 +229,9 @@ export function createSitemapProductScraper(config: SitemapShopConfig): ShopScra
     shopId: config.shopId,
     trustMatching: true,
     multiRetailer: true,
+    parseOfferPage(html, offer) {
+      return config.parseProductPage(html, offer.url);
+    },
     supportsFilament: config.supportsFilament,
     scoreFilament: config.scoreFilament,
     queryForFilament: config.queryForFilament || defaultQueryForFilament,

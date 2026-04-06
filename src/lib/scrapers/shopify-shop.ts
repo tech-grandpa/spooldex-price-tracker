@@ -6,7 +6,13 @@
  */
 
 import { TRACKER_USER_AGENT } from "@/lib/env";
-import type { ScrapedOfferCandidate, ScrapeFilamentInput, ShopScraper } from "@/lib/scrapers/types";
+import type {
+  ExistingOfferInput,
+  OfferConfirmationResult,
+  ScrapedOfferCandidate,
+  ScrapeFilamentInput,
+  ShopScraper,
+} from "@/lib/scrapers/types";
 import { normalizeComparable } from "@/lib/utils";
 
 interface ShopifyVariant {
@@ -29,6 +35,13 @@ interface ShopifyProduct {
   vendor: string;
   variants: ShopifyVariant[];
   images: Array<{ src: string }>;
+}
+
+interface ShopifyProductPage {
+  title: string;
+  handle: string;
+  images: string[];
+  variants: ShopifyVariant[];
 }
 
 interface ShopifyShopConfig {
@@ -74,6 +87,58 @@ function parseWeightFromText(text: string): number | null {
   if (!match) return null;
   const value = parseFloat(match[1]);
   return text.toLowerCase().includes("kg") ? Math.round(value * 1000) : Math.round(value);
+}
+
+function buildCandidateFromVariant(
+  config: ShopifyShopConfig,
+  product: Pick<ShopifyProductPage, "title" | "handle" | "images">,
+  variant: ShopifyVariant,
+): ScrapedOfferCandidate | null {
+  const priceCents = Math.round(parseFloat(variant.price) * 100);
+  if (!Number.isFinite(priceCents) || priceCents <= 0) return null;
+
+  const variantTitle = [variant.option1, variant.option2, variant.option3]
+    .filter(Boolean)
+    .join(" / ");
+  const fullTitle = variantTitle ? `${product.title} · ${variantTitle}` : product.title;
+  const imageUrl = variant.featured_image?.src || product.images[0] || null;
+  const weightG = parseWeightFromText(variantTitle) || parseWeightFromText(product.title) || 1000;
+
+  return {
+    externalId: String(variant.id),
+    title: fullTitle,
+    url: `${config.baseUrl}/products/${product.handle}?variant=${variant.id}`,
+    affiliateUrl: `${config.baseUrl}/products/${product.handle}?variant=${variant.id}`,
+    imageUrl,
+    priceCents,
+    currency: config.currency,
+    inStock: variant.available,
+    packType: "single",
+    spoolCount: 1,
+    totalWeightG: weightG,
+    sourceConfidence: 0.85,
+  };
+}
+
+function extractHandleFromOfferUrl(url: string) {
+  const match = new URL(url).pathname.match(/\/products\/([^/]+)/);
+  return match?.[1] ?? null;
+}
+
+function getConditionalHeaders(offer: ExistingOfferInput) {
+  const headers = new Headers({
+    "user-agent": TRACKER_USER_AGENT,
+  });
+
+  if (offer.etag) {
+    headers.set("if-none-match", offer.etag);
+  }
+
+  if (offer.lastModifiedHeader) {
+    headers.set("if-modified-since", offer.lastModifiedHeader);
+  }
+
+  return headers;
 }
 
 /** Noise words to strip from color/series tokens before matching */
@@ -135,6 +200,54 @@ export function createShopifyScraper(config: ShopifyShopConfig): ShopScraper {
       const material = ["PLA", "PETG", "ABS", "ASA", "TPU"].includes(filament.material.toUpperCase()) ? 12 : 4;
       return 100 + weight + material;
     }),
+    async confirmOffer(offer: ExistingOfferInput): Promise<OfferConfirmationResult> {
+      const handle = extractHandleFromOfferUrl(offer.url);
+      if (!handle) {
+        return {
+          status: "unmatched",
+          etag: offer.etag,
+          lastModifiedHeader: offer.lastModifiedHeader,
+        };
+      }
+
+      const response = await fetch(`${config.baseUrl}/products/${handle}.js`, {
+        headers: getConditionalHeaders(offer),
+        signal: AbortSignal.timeout(30000),
+      });
+      const etag = response.headers.get("etag");
+      const lastModifiedHeader = response.headers.get("last-modified");
+
+      if (response.status === 304) {
+        return {
+          status: "not-modified",
+          etag,
+          lastModifiedHeader,
+        };
+      }
+
+      if (!response.ok) {
+        throw new Error(`Shopify fetch failed ${response.status} for ${offer.url}`);
+      }
+
+      const product = (await response.json()) as ShopifyProductPage;
+      const variant = product.variants.find((entry) => String(entry.id) === offer.externalId);
+      const candidate = variant ? buildCandidateFromVariant(config, product, variant) : null;
+
+      if (!candidate) {
+        return {
+          status: "unmatched",
+          etag,
+          lastModifiedHeader,
+        };
+      }
+
+      return {
+        status: "updated",
+        candidate,
+        etag,
+        lastModifiedHeader,
+      };
+    },
 
     async scrapeFilament(filament: ScrapeFilamentInput): Promise<ScrapedOfferCandidate[]> {
       const products = await fetchAllProducts(config.baseUrl, config.isFilamentProduct);
@@ -144,31 +257,12 @@ export function createShopifyScraper(config: ShopifyShopConfig): ShopScraper {
       for (const product of products) {
         for (const variant of product.variants) {
           if (!matchFn(filament, product, variant)) continue;
-
-          const priceCents = Math.round(parseFloat(variant.price) * 100);
-          if (!Number.isFinite(priceCents) || priceCents <= 0) continue;
-
-          const variantTitle = [variant.option1, variant.option2, variant.option3]
-            .filter(Boolean)
-            .join(" / ");
-          const fullTitle = variantTitle ? `${product.title} · ${variantTitle}` : product.title;
-          const imageUrl = variant.featured_image?.src || product.images[0]?.src || null;
-          const weightG = parseWeightFromText(variantTitle) || parseWeightFromText(product.title) || 1000;
-
-          candidates.push({
-            externalId: String(variant.id),
-            title: fullTitle,
-            url: `${config.baseUrl}/products/${product.handle}?variant=${variant.id}`,
-            affiliateUrl: `${config.baseUrl}/products/${product.handle}?variant=${variant.id}`,
-            imageUrl,
-            priceCents,
-            currency: config.currency,
-            inStock: variant.available,
-            packType: "single",
-            spoolCount: 1,
-            totalWeightG: weightG,
-            sourceConfidence: 0.85,
-          });
+          const candidate = buildCandidateFromVariant(config, {
+            title: product.title,
+            handle: product.handle,
+            images: product.images.map((image) => image.src),
+          }, variant);
+          if (candidate) candidates.push(candidate);
         }
       }
 

@@ -1,5 +1,6 @@
 export const DEFAULT_MARKET = process.env.DEFAULT_MARKET?.trim() || "de";
-export const SCRAPE_INTERVAL_HOURS = Number(process.env.SCRAPE_INTERVAL_HOURS || "2");
+export const SCRAPE_INTERVAL_HOURS = Number(process.env.SCRAPE_INTERVAL_HOURS || "24");
+export const DISCOVERY_INTERVAL_HOURS = Number(process.env.DISCOVERY_INTERVAL_HOURS || "168");
 export const MIN_REQUEST_DELAY_MS = Number(process.env.MIN_REQUEST_DELAY_MS || "2000");
 export const SCRAPE_LIMIT_PER_SHOP = Number(process.env.SCRAPE_LIMIT_PER_SHOP || "500");
 export const SITE_URL =

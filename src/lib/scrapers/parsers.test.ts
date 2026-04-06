@@ -6,7 +6,7 @@ import { threeDjakeScraper } from "@/lib/scrapers/three-djake";
 
 describe("shop parsers", () => {
   it("extracts 3DJake offers from product cards", () => {
-    const offers = threeDjakeScraper.extractOffers(
+    const offers = threeDjakeScraper.extractOffers!(
       `
         <ul id="productList">
           <li class="productCard" data-json='{"id":"pla-galaxy-black-1"}'>
@@ -89,7 +89,7 @@ describe("shop parsers", () => {
   });
 
   it("extracts Prusa offers from product anchors", () => {
-    const offers = prusaStoreScraper.extractOffers(
+    const offers = prusaStoreScraper.extractOffers!(
       `
         <a class="ProductItem__Wrapper-sc-ec13a511-8 NWDqC" href="/product/prusament-pla-prusa-galaxy-black-1kg-nfc/">
           <img src="/content/images/product/galaxy-black.jpg" alt="Prusament PLA Prusa Galaxy Black 1kg (NFC)" />

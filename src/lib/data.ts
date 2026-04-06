@@ -26,6 +26,17 @@ const offerInclude = {
 
 type OfferWithRelations = Prisma.OfferGetPayload<{ include: typeof offerInclude }>;
 
+function getOfferFreshnessDate(offer: {
+  latestScrapedAt?: Date | null;
+  lastCheckedAt?: Date | null;
+}) {
+  const latestScrapedAt = offer.latestScrapedAt ?? null;
+  const lastCheckedAt = offer.lastCheckedAt ?? null;
+  if (!latestScrapedAt) return lastCheckedAt;
+  if (!lastCheckedAt) return latestScrapedAt;
+  return latestScrapedAt.getTime() >= lastCheckedAt.getTime() ? latestScrapedAt : lastCheckedAt;
+}
+
 function tokenizeComparable(value: string | null | undefined) {
   return normalizeComparable(value)
     .split(" ")
@@ -72,6 +83,7 @@ function sortOffers(a: OfferWithRelations, b: OfferWithRelations) {
 }
 
 function serializeOffer(offer: OfferWithRelations) {
+  const freshnessDate = getOfferFreshnessDate(offer);
   return {
     id: offer.id,
     slug: offer.slug,
@@ -84,7 +96,7 @@ function serializeOffer(offer: OfferWithRelations) {
     imageUrl: offer.imageUrl,
     lastCheckedAt: offer.lastCheckedAt,
     lastSeenAt: offer.lastSeenAt,
-    freshnessLabel: formatFreshness(offer.latestScrapedAt ?? offer.lastCheckedAt),
+    freshnessLabel: formatFreshness(freshnessDate),
     scrapeStatus: offer.scrapeStatus,
     sourceConfidence: offer.sourceConfidence,
     latestPriceCents: offer.latestPriceCents,
@@ -140,8 +152,9 @@ async function getShopSummaries(region?: string | null) {
 
   return shops.map((shop) => {
     const latestOfferDate = shop.offers.reduce<Date | null>((latest, offer) => {
-      if (!offer.latestScrapedAt) return latest;
-      if (!latest || latest.getTime() < offer.latestScrapedAt.getTime()) return offer.latestScrapedAt;
+      const freshnessDate = getOfferFreshnessDate(offer);
+      if (!freshnessDate) return latest;
+      if (!latest || latest.getTime() < freshnessDate.getTime()) return freshnessDate;
       return latest;
     }, null);
 
@@ -544,8 +557,9 @@ export async function getShopPageData(shopId: string) {
   const packOffers = shop.offers.filter((offer) => offer.packType !== "single").sort(sortOffers);
   const filamentIds = new Set(shop.offers.flatMap((offer) => offer.items.map((item) => item.filamentId)));
   const latestCheckedAt = shop.offers.reduce<Date | null>((latest, offer) => {
-    if (!offer.latestScrapedAt) return latest;
-    if (!latest || latest.getTime() < offer.latestScrapedAt.getTime()) return offer.latestScrapedAt;
+    const freshnessDate = getOfferFreshnessDate(offer);
+    if (!freshnessDate) return latest;
+    if (!latest || latest.getTime() < freshnessDate.getTime()) return freshnessDate;
     return latest;
   }, null);
 
@@ -578,8 +592,9 @@ export async function getShopsIndexPageData(region?: string | null) {
   const shops = allShops.map((shop) => {
     const filamentIds = new Set(shop.offers.flatMap((o) => o.items.map((i) => i.filamentId)));
     const latestDate = shop.offers.reduce<Date | null>((latest, o) => {
-      if (!o.latestScrapedAt) return latest;
-      if (!latest || latest.getTime() < o.latestScrapedAt.getTime()) return o.latestScrapedAt;
+      const freshnessDate = getOfferFreshnessDate(o);
+      if (!freshnessDate) return latest;
+      if (!latest || latest.getTime() < freshnessDate.getTime()) return freshnessDate;
       return latest;
     }, null);
     return {
@@ -1034,7 +1049,26 @@ export async function upsertOfferSnapshot(args: {
   totalWeightG?: number | null;
   sourceConfidence?: number | null;
   lastSeenAt?: Date;
+  etag?: string | null;
+  lastModifiedHeader?: string | null;
 }) {
+  const now = new Date();
+  const existingOffer = await prisma.offer.findUnique({
+    where: {
+      shopId_externalId: {
+        shopId: args.shopId,
+        externalId: args.externalId,
+      },
+    },
+    select: {
+      id: true,
+      latestPriceCents: true,
+      latestCurrency: true,
+      latestPricePerKgCents: true,
+      latestInStock: true,
+    },
+  });
+  const nextPricePerKgCents = computePricePerKgCents(args.priceCents, args.totalWeightG);
   const offer = await prisma.offer.upsert({
     where: {
       shopId_externalId: {
@@ -1050,18 +1084,20 @@ export async function upsertOfferSnapshot(args: {
       url: args.url,
       affiliateUrl: args.affiliateUrl || args.url,
       imageUrl: args.imageUrl,
+      etag: args.etag,
+      lastModifiedHeader: args.lastModifiedHeader,
       packType: args.packType || "single",
       spoolCount: args.spoolCount || 1,
       totalWeightG: args.totalWeightG,
-      lastCheckedAt: new Date(),
-      lastSeenAt: args.lastSeenAt || new Date(),
+      lastCheckedAt: now,
+      lastSeenAt: args.lastSeenAt || now,
       scrapeStatus: "matched",
       sourceConfidence: args.sourceConfidence ?? 0.5,
       latestPriceCents: args.priceCents,
       latestCurrency: args.currency,
-      latestPricePerKgCents: computePricePerKgCents(args.priceCents, args.totalWeightG),
+      latestPricePerKgCents: nextPricePerKgCents,
       latestInStock: args.inStock,
-      latestScrapedAt: new Date(),
+      latestScrapedAt: now,
       items: {
         create: {
           filamentId: args.filamentId,
@@ -1077,28 +1113,37 @@ export async function upsertOfferSnapshot(args: {
       url: args.url,
       affiliateUrl: args.affiliateUrl || args.url,
       imageUrl: args.imageUrl,
+      etag: args.etag,
+      lastModifiedHeader: args.lastModifiedHeader,
       packType: args.packType || "single",
       spoolCount: args.spoolCount || 1,
       totalWeightG: args.totalWeightG,
-      lastCheckedAt: new Date(),
-      lastSeenAt: args.lastSeenAt || new Date(),
+      lastCheckedAt: now,
+      lastSeenAt: args.lastSeenAt || now,
       scrapeStatus: "matched",
       sourceConfidence: args.sourceConfidence ?? 0.5,
       latestPriceCents: args.priceCents,
       latestCurrency: args.currency,
-      latestPricePerKgCents: computePricePerKgCents(args.priceCents, args.totalWeightG),
+      latestPricePerKgCents: nextPricePerKgCents,
       latestInStock: args.inStock,
-      latestScrapedAt: new Date(),
+      latestScrapedAt: now,
     },
   });
 
-  if (args.priceCents != null) {
+  const snapshotChanged =
+    !existingOffer ||
+    existingOffer.latestPriceCents !== args.priceCents ||
+    existingOffer.latestCurrency !== args.currency ||
+    existingOffer.latestPricePerKgCents !== nextPricePerKgCents ||
+    existingOffer.latestInStock !== args.inStock;
+
+  if (args.priceCents != null && snapshotChanged) {
     await prisma.priceSnapshot.create({
       data: {
         offerId: offer.id,
         priceCents: args.priceCents,
         currency: args.currency,
-        pricePerKgCents: computePricePerKgCents(args.priceCents, args.totalWeightG),
+        pricePerKgCents: nextPricePerKgCents,
         inStock: args.inStock,
       },
     });
@@ -1109,6 +1154,99 @@ export async function upsertOfferSnapshot(args: {
   // returns a generic product page image that may show Black when the
   // filament is Pink Citrus). Instead, we let the display layer fall back
   // to the color swatch for filaments without a canonical image.
+
+  return offer;
+}
+
+export async function markOfferChecked(args: {
+  offerId: string;
+  lastSeenAt?: Date;
+  etag?: string | null;
+  lastModifiedHeader?: string | null;
+}) {
+  const now = new Date();
+  return prisma.offer.update({
+    where: { id: args.offerId },
+    data: {
+      lastCheckedAt: now,
+      lastSeenAt: args.lastSeenAt || now,
+      etag: args.etag,
+      lastModifiedHeader: args.lastModifiedHeader,
+    },
+  });
+}
+
+export async function refreshOfferSnapshot(args: {
+  offerId: string;
+  title: string;
+  url: string;
+  affiliateUrl?: string | null;
+  imageUrl?: string | null;
+  priceCents: number | null;
+  currency: string;
+  inStock: boolean;
+  packType?: string;
+  spoolCount?: number;
+  totalWeightG?: number | null;
+  sourceConfidence?: number | null;
+  lastSeenAt?: Date;
+  etag?: string | null;
+  lastModifiedHeader?: string | null;
+}) {
+  const now = new Date();
+  const existingOffer = await prisma.offer.findUniqueOrThrow({
+    where: { id: args.offerId },
+    select: {
+      id: true,
+      latestPriceCents: true,
+      latestCurrency: true,
+      latestPricePerKgCents: true,
+      latestInStock: true,
+    },
+  });
+  const nextPricePerKgCents = computePricePerKgCents(args.priceCents, args.totalWeightG);
+
+  const offer = await prisma.offer.update({
+    where: { id: args.offerId },
+    data: {
+      title: args.title,
+      url: args.url,
+      affiliateUrl: args.affiliateUrl || args.url,
+      imageUrl: args.imageUrl,
+      etag: args.etag,
+      lastModifiedHeader: args.lastModifiedHeader,
+      packType: args.packType || "single",
+      spoolCount: args.spoolCount || 1,
+      totalWeightG: args.totalWeightG,
+      lastCheckedAt: now,
+      lastSeenAt: args.lastSeenAt || now,
+      scrapeStatus: "matched",
+      sourceConfidence: args.sourceConfidence ?? 0.5,
+      latestPriceCents: args.priceCents,
+      latestCurrency: args.currency,
+      latestPricePerKgCents: nextPricePerKgCents,
+      latestInStock: args.inStock,
+      latestScrapedAt: now,
+    },
+  });
+
+  const snapshotChanged =
+    existingOffer.latestPriceCents !== args.priceCents ||
+    existingOffer.latestCurrency !== args.currency ||
+    existingOffer.latestPricePerKgCents !== nextPricePerKgCents ||
+    existingOffer.latestInStock !== args.inStock;
+
+  if (args.priceCents != null && snapshotChanged) {
+    await prisma.priceSnapshot.create({
+      data: {
+        offerId: offer.id,
+        priceCents: args.priceCents,
+        currency: args.currency,
+        pricePerKgCents: nextPricePerKgCents,
+        inStock: args.inStock,
+      },
+    });
+  }
 
   return offer;
 }

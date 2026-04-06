@@ -1,9 +1,9 @@
 import { pathToFileURL } from "node:url";
 import { prisma } from "@/lib/prisma";
-import { ensureDefaultShops, upsertOfferSnapshot } from "@/lib/data";
+import { ensureDefaultShops, markOfferChecked, refreshOfferSnapshot, upsertOfferSnapshot } from "@/lib/data";
 import { cacheRemoteImageToR2 } from "@/lib/r2";
-import { getShopScraper, scrapeShopFilament } from "@/lib/scrapers";
-import type { ScrapeFilamentInput, ScrapedOfferCandidate } from "@/lib/scrapers/types";
+import { confirmShopOffer, getShopScraper, scrapeShopFilament } from "@/lib/scrapers";
+import type { ExistingOfferInput, ScrapeFilamentInput, ScrapedOfferCandidate } from "@/lib/scrapers/types";
 import { SCRAPE_LIMIT_PER_SHOP } from "@/lib/env";
 import { normalizeComparable } from "@/lib/utils";
 
@@ -81,7 +81,7 @@ function sortFilamentsForShop(
   mode: "discover" | "update",
 ) {
   if (mode === "update") {
-    // Only return filaments that already have offers for this shop (re-scrape existing)
+    // Only return filaments that already have offers for this shop.
     return [...filaments]
       .filter((f) => scrapeState.has(`${scraper.shopId}:${f.id}`))
       .sort((a, b) => {
@@ -91,7 +91,7 @@ function sortFilamentsForShop(
       });
   }
 
-  // Discovery mode: never-scraped first, then by score
+  // Discovery mode only hunts for filaments that do not yet have offers at this shop.
   return [...filaments].sort((a, b) => {
     const aState = scrapeState.get(`${scraper.shopId}:${a.id}`);
     const bState = scrapeState.get(`${scraper.shopId}:${b.id}`);
@@ -105,26 +105,121 @@ function sortFilamentsForShop(
   });
 }
 
-/** Get list of enabled shops */
-export async function getEnabledShops(): Promise<Array<{ id: string; name: string }>> {
-  await ensureDefaultShops();
-  return prisma.shop.findMany({
-    where: { enabled: true },
-    select: { id: true, name: true },
-    orderBy: { name: "asc" },
+type ExistingOfferForUpdate = ExistingOfferInput & {
+  lastCheckedAt: Date | null;
+};
+
+function sortOffersForUpdate(offers: ExistingOfferForUpdate[]) {
+  return [...offers].sort((a, b) => {
+    const aCheckedAt = a.etag || a.lastModifiedHeader ? 1 : 0;
+    const bCheckedAt = b.etag || b.lastModifiedHeader ? 1 : 0;
+    if (a.latestPriceCents == null && b.latestPriceCents != null) return -1;
+    if (a.latestPriceCents != null && b.latestPriceCents == null) return 1;
+    if (aCheckedAt !== bCheckedAt) return aCheckedAt - bCheckedAt;
+    const aTime = a.lastCheckedAt?.getTime() ?? 0;
+    const bTime = b.lastCheckedAt?.getTime() ?? 0;
+    return aTime - bTime;
   });
 }
 
-/** Run scraping for a single shop */
-export async function runShop(shopId: string, shopName: string, mode: "discover" | "update" = "discover") {
-  const scraper = getShopScraper(shopId);
-  if (!scraper) {
-    console.log(`[${shopName}] no scraper registered — skipping`);
+async function runOfferUpdates(shopId: string, shopName: string, limit: number) {
+  const offers = await prisma.offer.findMany({
+    where: {
+      shopId,
+      items: { some: {} },
+    },
+    select: {
+      id: true,
+      shopId: true,
+      externalId: true,
+      url: true,
+      affiliateUrl: true,
+      title: true,
+      imageUrl: true,
+      packType: true,
+      spoolCount: true,
+      totalWeightG: true,
+      etag: true,
+      lastModifiedHeader: true,
+      lastCheckedAt: true,
+      latestPriceCents: true,
+      latestCurrency: true,
+      latestInStock: true,
+      sourceConfidence: true,
+    },
+  });
+
+  const selectedOffers = sortOffersForUpdate(offers).slice(0, limit);
+  if (selectedOffers.length === 0) {
+    console.log(`[${shopName}] update: nothing to do`);
     return;
   }
 
-  const limit = SCRAPE_LIMIT_PER_SHOP;
+  console.log(`[${shopName}] update: ${selectedOffers.length} offers (limit ${limit})`);
 
+  let refreshed = 0;
+  let notModified = 0;
+  let unmatched = 0;
+  let failed = 0;
+
+  for (const offer of selectedOffers) {
+    try {
+      const result = await confirmShopOffer(shopId, offer);
+      if (result.status === "not-modified") {
+        await markOfferChecked({
+          offerId: offer.id,
+          lastSeenAt: new Date(),
+          etag: result.etag,
+          lastModifiedHeader: result.lastModifiedHeader,
+        });
+        notModified++;
+        continue;
+      }
+
+      if (result.status === "updated") {
+        await refreshOfferSnapshot({
+          offerId: offer.id,
+          title: result.candidate.title,
+          url: result.candidate.url,
+          affiliateUrl: result.candidate.affiliateUrl,
+          imageUrl: result.candidate.imageUrl || offer.imageUrl,
+          priceCents: result.candidate.priceCents,
+          currency: result.candidate.currency,
+          inStock: result.candidate.inStock,
+          packType: result.candidate.packType,
+          spoolCount: result.candidate.spoolCount,
+          totalWeightG: result.candidate.totalWeightG ?? offer.totalWeightG,
+          sourceConfidence: result.candidate.sourceConfidence,
+          lastSeenAt: new Date(),
+          etag: result.etag,
+          lastModifiedHeader: result.lastModifiedHeader,
+        });
+        refreshed++;
+        continue;
+      }
+
+      unmatched++;
+    } catch (error) {
+      failed++;
+      console.error(
+        `[${shopName}] update failed for ${offer.url}:`,
+        error instanceof Error ? error.message : error,
+      );
+      if (failed > 10) {
+        console.error(`[${shopName}] too many update failures (${failed}) — aborting shop`);
+        break;
+      }
+    }
+  }
+
+  const conditionalChecks = refreshed + notModified;
+  const ratio = conditionalChecks > 0 ? `${Math.round((notModified / conditionalChecks) * 100)}%` : "0%";
+  console.log(
+    `[${shopName}] update done: ${refreshed} fetched (200), ${notModified} not modified (304), ratio ${ratio}, ${unmatched} unmatched, ${failed} failures`,
+  );
+}
+
+async function runDiscoveryShop(shopId: string, shopName: string, scraper: NonNullable<ReturnType<typeof getShopScraper>>, limit: number) {
   const [filaments, offerItems] = await Promise.all([
     prisma.filament.findMany({
       select: {
@@ -154,14 +249,16 @@ export async function runShop(shopId: string, shopName: string, mode: "discover"
   const supportedFilaments = filaments.filter((f) =>
     scraper.supportsFilament ? scraper.supportsFilament(f) : true,
   );
-  const selectedFilaments = sortFilamentsForShop(scraper, supportedFilaments, scrapeState, mode).slice(0, limit);
+  const selectedFilaments = sortFilamentsForShop(scraper, supportedFilaments, scrapeState, "discover")
+    .filter((filament) => !scrapeState.has(`${shopId}:${filament.id}`))
+    .slice(0, limit);
 
   if (selectedFilaments.length === 0) {
-    console.log(`[${shopName}] ${mode}: nothing to do`);
+    console.log(`[${shopName}] discover: nothing to do`);
     return;
   }
 
-  console.log(`[${shopName}] ${mode}: ${selectedFilaments.length} filaments (limit ${limit})`);
+  console.log(`[${shopName}] discover: ${selectedFilaments.length} filaments (limit ${limit})`);
   let matched = 0;
   let failed = 0;
 
@@ -181,8 +278,6 @@ export async function runShop(shopId: string, shopName: string, mode: "discover"
         ? rankedCandidates
         : rankedCandidates.filter((c) => isStrongMatch(filament, query, c));
 
-      // For multi-brand retailers: verify the offer title contains the filament's brand
-      // (prevents "Elegoo PETG Red" matching "CR-3D PETG Rot" from 3Dmensionals)
       if (scraper.multiRetailer && filament.brand) {
         const brandTokens = normalizeComparable(filament.brand).split(" ").filter((t) => t.length > 2);
         if (brandTokens.length > 0) {
@@ -222,6 +317,10 @@ export async function runShop(shopId: string, shopName: string, mode: "discover"
       }
     } catch (error) {
       failed++;
+      console.error(
+        `[${shopName}] discovery failed for ${filament.slug}:`,
+        error instanceof Error ? error.message : error,
+      );
       if (failed > 10) {
         console.error(`[${shopName}] too many failures (${failed}) — aborting shop`);
         break;
@@ -229,7 +328,35 @@ export async function runShop(shopId: string, shopName: string, mode: "discover"
     }
   }
 
-  console.log(`[${shopName}] ${mode} done: ${matched} offers matched, ${failed} failures`);
+  console.log(`[${shopName}] discover done: ${matched} offers matched, ${failed} failures`);
+}
+
+/** Get list of enabled shops */
+export async function getEnabledShops(): Promise<Array<{ id: string; name: string }>> {
+  await ensureDefaultShops();
+  return prisma.shop.findMany({
+    where: { enabled: true },
+    select: { id: true, name: true },
+    orderBy: { name: "asc" },
+  });
+}
+
+/** Run scraping for a single shop */
+export async function runShop(shopId: string, shopName: string, mode: "discover" | "update" = "discover") {
+  const scraper = getShopScraper(shopId);
+  if (!scraper) {
+    console.log(`[${shopName}] no scraper registered — skipping`);
+    return;
+  }
+
+  const limit = SCRAPE_LIMIT_PER_SHOP;
+
+  if (mode === "update") {
+    await runOfferUpdates(shopId, shopName, limit);
+    return;
+  }
+
+  await runDiscoveryShop(shopId, shopName, scraper, limit);
 }
 
 // CLI entry point
