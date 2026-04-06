@@ -15,8 +15,17 @@ const DISCOVERY_INTERVAL_MS = Math.max(1, SCRAPE_INTERVAL_HOURS) * 60 * 60 * 100
 const UPDATE_INTERVAL_MS = 24 * 60 * 60 * 1000;
 const PER_SHOP_TIMEOUT_MS = 20 * 60 * 1000; // 20 min max per shop
 
+/** Max random jitter added to interval (±3 hours) */
+const JITTER_MAX_MS = 3 * 60 * 60 * 1000;
+
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** Add random jitter to an interval so cycles don't always start at the same time */
+function jitter(baseMs: number): number {
+  const offset = Math.floor(Math.random() * JITTER_MAX_MS * 2) - JITTER_MAX_MS;
+  return Math.max(30 * 60 * 1000, baseMs + offset); // minimum 30 min
 }
 
 function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T | null> {
@@ -60,9 +69,14 @@ async function runCycle() {
 }
 
 async function loop() {
-  console.log(`[Worker] Started — discovery every ${SCRAPE_INTERVAL_HOURS}h, updates every 24h`);
+  console.log(`[Worker] Started — discovery every ~${SCRAPE_INTERVAL_HOURS}h (±3h jitter), updates every ~24h`);
   // First run is always a discovery cycle
   lastUpdateRun = Date.now();
+
+  // Random initial delay (0–60 min) so restarts don't always scrape immediately
+  const initialDelay = Math.floor(Math.random() * 60 * 60 * 1000);
+  console.log(`[Worker] Initial delay: ${Math.round(initialDelay / 60000)}min`);
+  await sleep(initialDelay);
 
   while (true) {
     try {
@@ -70,7 +84,9 @@ async function loop() {
     } catch (error) {
       console.error("[Worker] Cycle error:", error);
     }
-    await sleep(DISCOVERY_INTERVAL_MS);
+    const nextSleep = jitter(DISCOVERY_INTERVAL_MS);
+    console.log(`[Worker] Next cycle in ~${(nextSleep / 3600000).toFixed(1)}h`);
+    await sleep(nextSleep);
   }
 }
 
