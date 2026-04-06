@@ -9,6 +9,8 @@ const querySchema = z.object({
   material: z.string().optional(),
   series: z.string().optional(),
   colorName: z.string().optional(),
+  colorHex: z.string().optional(),
+  colorHexes: z.string().optional(),
   weightG: z.string().optional(),
 });
 
@@ -21,10 +23,17 @@ export async function GET(request: Request) {
     material: url.searchParams.get("material") || undefined,
     series: url.searchParams.get("series") || undefined,
     colorName: url.searchParams.get("colorName") || undefined,
+    colorHex: url.searchParams.get("colorHex") || undefined,
+    colorHexes: url.searchParams.get("colorHexes") || undefined,
     weightG: url.searchParams.get("weightG") || undefined,
   });
 
-  const data = await lookupOffers(params);
+  const data = await lookupOffers({
+    ...params,
+    colorHexes: params.colorHexes
+      ? params.colorHexes.split(",").map((value) => value.trim()).filter(Boolean)
+      : undefined,
+  });
   if (!data) {
     return NextResponse.json({ data: null }, {
       status: 404,

@@ -1045,6 +1045,8 @@ export async function lookupOffers(params: {
   material?: string | null;
   series?: string | null;
   colorName?: string | null;
+  colorHex?: string | null;
+  colorHexes?: string[] | null;
   weightG?: string | null;
 }) {
   const ean = params.ean?.trim() || "";
@@ -1070,11 +1072,19 @@ export async function lookupOffers(params: {
   }
 
   if (!filament) return null;
+
+  const overrideColorHexes = (params.colorHexes ?? []).filter(Boolean);
+  const similarityBase = {
+    ...filament,
+    colorHex: params.colorHex?.trim() || filament.colorHex,
+    colorHexes: overrideColorHexes.length > 0 ? overrideColorHexes : filament.colorHexes,
+  };
+
   const [offers, priceHistory, similarSameMaterial, similarDifferentMaterial] = await Promise.all([
     getLookupOffersForFilamentId(filament.id),
     getLookupPriceHistory(filament.id),
-    getSimilarLookupFilaments(filament, { mode: "same-material", limit: 8 }),
-    getSimilarLookupFilaments(filament, { mode: "different-material", limit: 6 }),
+    getSimilarLookupFilaments(similarityBase, { mode: "same-material", limit: 8 }),
+    getSimilarLookupFilaments(similarityBase, { mode: "different-material", limit: 6 }),
   ]);
 
   const serializedOffers = offers
