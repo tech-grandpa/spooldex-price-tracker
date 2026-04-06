@@ -12,6 +12,7 @@ interface SimilarFilamentInput {
   material: string;
   colorName: string | null;
   colorHex: string | null;
+  colorHexes?: string[] | null;
 }
 
 function tokenizeColor(value: string | null | undefined) {
@@ -24,6 +25,12 @@ function getRgbDistance(aHex: string, bHex: string) {
   const a = hexToRgb(aHex);
   const b = hexToRgb(bHex);
   return Math.sqrt((a.r - b.r) ** 2 + (a.g - b.g) ** 2 + (a.b - b.b) ** 2);
+}
+
+function getColorHexes(input: SimilarFilamentInput) {
+  const colors = input.colorHexes?.filter(Boolean) ?? [];
+  if (colors.length > 0) return colors;
+  return input.colorHex ? [input.colorHex] : [];
 }
 
 export function compareLookupOfferOrder(a: LookupOfferOrderInput, b: LookupOfferOrderInput) {
@@ -47,8 +54,24 @@ export function buildLookupFilamentName(filament: {
 export function getSimilarFilamentScore(target: SimilarFilamentInput, candidate: SimilarFilamentInput) {
   let score = 0;
 
-  if (target.colorHex && candidate.colorHex) {
-    score += Math.max(0, 200 - getRgbDistance(target.colorHex, candidate.colorHex));
+  const targetColors = getColorHexes(target);
+  const candidateColors = getColorHexes(candidate);
+
+  if (targetColors.length > 0 && candidateColors.length > 0) {
+    const distances = targetColors.flatMap((targetColor) =>
+      candidateColors.map((candidateColor) => getRgbDistance(targetColor, candidateColor)),
+    );
+    const minDistance = Math.min(...distances);
+    score += Math.max(0, 200 - minDistance);
+
+    const closeMatchCount = targetColors.filter((targetColor) =>
+      candidateColors.some((candidateColor) => getRgbDistance(targetColor, candidateColor) < 70),
+    ).length;
+    score += closeMatchCount * 36;
+
+    if (targetColors.length > 1 && candidateColors.length > 1) {
+      score += 24;
+    }
   }
 
   const targetTokens = tokenizeColor(target.colorName);

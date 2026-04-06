@@ -904,6 +904,7 @@ async function getSimilarLookupFilaments(
     material: string;
     colorName: string | null;
     colorHex: string | null;
+    colorHexes: string[];
   },
   options: {
     mode: "same-material" | "different-material";
@@ -943,6 +944,7 @@ async function getSimilarLookupFilaments(
       name: buildLookupFilamentName(candidate),
       colorName: candidate.colorName ?? "",
       colorHex: candidate.colorHex ?? null,
+      colorHexes: candidate.colorHexes,
       material: candidate.material,
       bestPriceCents: bestOffer?.latestPriceCents ?? null,
       bestPriceCurrency: bestOffer?.latestCurrency ?? null,
