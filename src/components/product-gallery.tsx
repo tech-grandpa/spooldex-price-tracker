@@ -7,6 +7,7 @@ interface ProductGalleryProps {
   images: string[];
   alt: string;
   colorHex?: string | null;
+  colorHexes?: string[];
   brand?: string;
   material?: string;
   colorName?: string | null;
@@ -16,32 +17,32 @@ interface ProductGalleryProps {
 type GalleryItem =
   | { type: "image"; src: string }
   | { type: "spool" }
-  | { type: "swatch" };
+  | { type: "swatch" }
+  | { type: "palette" };
 
 /**
  * Build the gallery items list:
  *   1. Real product images (first one is default)
- *   2. Spool preview (always present if colorHex exists)
- *   3. Color swatch (always present if colorHex exists)
+ *   2. For single-color: spool preview + swatch
+ *   3. For multi-color: palette only
  *   4. Remaining real images
- *
- * If no real images: spool preview is default.
  */
-function buildGalleryItems(images: string[], hasColor: boolean): GalleryItem[] {
+function buildGalleryItems(images: string[], hasColor: boolean, isMulti: boolean): GalleryItem[] {
   const items: GalleryItem[] = [];
 
   if (images.length > 0) {
-    // First real image
     items.push({ type: "image", src: images[0] });
   }
 
-  // Spool preview + swatch always present when we have a color
   if (hasColor) {
-    items.push({ type: "spool" });
-    items.push({ type: "swatch" });
+    if (isMulti) {
+      items.push({ type: "palette" });
+    } else {
+      items.push({ type: "spool" });
+      items.push({ type: "swatch" });
+    }
   }
 
-  // Remaining real images
   for (let i = 1; i < images.length; i++) {
     items.push({ type: "image", src: images[i] });
   }
@@ -49,9 +50,32 @@ function buildGalleryItems(images: string[], hasColor: boolean): GalleryItem[] {
   return items;
 }
 
-export function ProductGallery({ images, alt, colorHex, brand, material, colorName, weight }: ProductGalleryProps) {
+function ColorPalette({ colors }: { colors: string[] }) {
+  return (
+    <div className="grid w-full gap-3 p-4 sm:grid-cols-2">
+      {colors.map((color, index) => (
+        <div
+          key={`${color}-${index}`}
+          className="flex items-center gap-3 rounded-xl border border-border bg-background p-3"
+        >
+          <div className="h-12 w-12 shrink-0 rounded-lg border border-border" style={{ backgroundColor: color }} />
+          <div className="min-w-0">
+            <p className="text-[0.6875rem] font-semibold uppercase tracking-wider text-muted-foreground">
+              Color {index + 1}
+            </p>
+            <p className="font-mono text-sm font-semibold text-foreground">{color.toUpperCase()}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export function ProductGallery({ images, alt, colorHex, colorHexes, brand, material, colorName, weight }: ProductGalleryProps) {
+  const paletteColors = colorHexes?.filter(Boolean) ?? [];
+  const isMulti = paletteColors.length > 1;
   const hasColor = !!colorHex;
-  const items = buildGalleryItems(images, hasColor);
+  const items = buildGalleryItems(images, hasColor, isMulti);
   const [activeIndex, setActiveIndex] = useState(0);
 
   // No items at all (no images, no color)
@@ -101,6 +125,8 @@ export function ProductGallery({ images, alt, colorHex, brand, material, colorNa
             </div>
           </div>
         );
+      case "palette":
+        return <ColorPalette colors={paletteColors} />;
     }
   }
 
@@ -146,6 +172,15 @@ export function ProductGallery({ images, alt, colorHex, brand, material, colorNa
                 {colorHex}
               </span>
             </div>
+          </button>
+        );
+      case "palette":
+        return (
+          <button key={`palette-${i}`} onClick={() => setActiveIndex(i)} className={cls}>
+            <div
+              className="flex h-full w-full"
+              style={{ backgroundImage: `linear-gradient(to right, ${paletteColors.join(", ")})` }}
+            />
           </button>
         );
     }

@@ -147,6 +147,7 @@ export default async function FilamentPage({ params }: FilamentPageProps) {
             images={data.images}
             alt={`${data.filament.brand} ${data.filament.colorName ?? ""}`}
             colorHex={data.filament.colorHex}
+            colorHexes={data.filament.colorHexes}
             brand={data.filament.brand}
             material={data.filament.material}
             colorName={data.filament.colorName}
