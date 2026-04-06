@@ -26,8 +26,17 @@ export async function GET(request: Request) {
 
   const data = await lookupOffers(params);
   if (!data) {
-    return NextResponse.json({ data: null }, { status: 404 });
+    return NextResponse.json({ data: null }, {
+      status: 404,
+      headers: {
+        "Cache-Control": "public, max-age=300",
+      },
+    });
   }
 
-  return NextResponse.json({ data });
+  return NextResponse.json({ data }, {
+    headers: {
+      "Cache-Control": "public, max-age=300",
+    },
+  });
 }

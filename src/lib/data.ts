@@ -1,4 +1,5 @@
 import { Prisma } from "@prisma/client";
+import { buildLookupFilamentName, compareLookupOfferOrder, getSimilarFilamentScore } from "@/lib/lookup-utils";
 import { prisma } from "@/lib/prisma";
 import { buildAbsoluteUrl, computePricePerKgCents, formatFreshness, normalizeComparable, slugify } from "@/lib/utils";
 import { DEFAULT_MARKET } from "@/lib/env";
@@ -848,6 +849,109 @@ export async function getPriceHistoryForApi(idOrSlug: string) {
   return detail ? detail.priceHistory : null;
 }
 
+async function getLookupOffersForFilamentId(filamentId: string) {
+  const offers = await prisma.offer.findMany({
+    where: {
+      shop: { market: DEFAULT_MARKET, enabled: true },
+      items: { some: { filamentId } },
+    },
+    include: offerInclude,
+  });
+
+  return offers.sort((a, b) =>
+    compareLookupOfferOrder(
+      { priceCents: a.latestPriceCents, affiliateUrl: a.affiliateUrl },
+      { priceCents: b.latestPriceCents, affiliateUrl: b.affiliateUrl },
+    ),
+  );
+}
+
+async function getLookupPriceHistory(filamentId: string) {
+  const cutoff = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+  const snapshots = await prisma.priceSnapshot.findMany({
+    where: {
+      scrapedAt: { gte: cutoff },
+      offer: {
+        shop: { market: DEFAULT_MARKET, enabled: true },
+        items: { some: { filamentId } },
+      },
+    },
+    include: {
+      offer: {
+        include: {
+          shop: true,
+        },
+      },
+    },
+    orderBy: { scrapedAt: "asc" },
+  });
+
+  return snapshots.map((snapshot) => ({
+    date: snapshot.scrapedAt.toISOString(),
+    priceCents: snapshot.priceCents,
+    currency: snapshot.currency,
+    shopName: snapshot.offer.shop.name,
+    shopId: snapshot.offer.shop.id,
+  }));
+}
+
+async function getSimilarLookupFilaments(
+  filament: {
+    id: string;
+    slug: string;
+    brand: string;
+    series: string | null;
+    material: string;
+    colorName: string | null;
+    colorHex: string | null;
+  },
+  options: {
+    mode: "same-material" | "different-material";
+    limit: number;
+  },
+) {
+  const candidates = await prisma.filament.findMany({
+    where: {
+      id: { not: filament.id },
+      ...(options.mode === "same-material"
+        ? {
+            brand: { not: filament.brand },
+            material: filament.material,
+          }
+        : {
+            material: { not: filament.material },
+          }),
+    },
+    take: options.mode === "same-material" ? 250 : 350,
+  });
+
+  const scored = candidates
+    .map((candidate) => ({
+      filament: candidate,
+      score: getSimilarFilamentScore(filament, candidate),
+    }))
+    .filter((entry) => entry.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, options.limit);
+
+  const bestOffers = await getBestOffersForFilamentIds(scored.map((entry) => entry.filament.id));
+
+  return scored.map(({ filament: candidate }) => {
+    const bestOffer = bestOffers.get(candidate.id) ?? null;
+    return {
+      brand: candidate.brand,
+      name: buildLookupFilamentName(candidate),
+      colorName: candidate.colorName ?? "",
+      colorHex: candidate.colorHex ?? null,
+      material: candidate.material,
+      bestPriceCents: bestOffer?.latestPriceCents ?? null,
+      bestPriceCurrency: bestOffer?.latestCurrency ?? null,
+      imageUrl: candidate.imageUrl || bestOffer?.imageUrl || null,
+      trackerUrl: buildAbsoluteUrl(`/filaments/${candidate.slug}`),
+    };
+  });
+}
+
 async function getNormalizedLookupCandidates(params: {
   brand?: string | null;
   material?: string | null;
@@ -964,15 +1068,23 @@ export async function lookupOffers(params: {
   }
 
   if (!filament) return null;
+  const [offers, priceHistory, similarSameMaterial, similarDifferentMaterial] = await Promise.all([
+    getLookupOffersForFilamentId(filament.id),
+    getLookupPriceHistory(filament.id),
+    getSimilarLookupFilaments(filament, { mode: "same-material", limit: 8 }),
+    getSimilarLookupFilaments(filament, { mode: "different-material", limit: 6 }),
+  ]);
 
-  let offers = await getOffersForFilamentId(filament.id);
-  if (offers.length === 0 && normalizedCandidates.length > 0) {
-    for (const candidate of normalizedCandidates) {
-      if (candidate.candidate.id === filament.id) continue;
-      offers = await getOffersForFilamentId(candidate.candidate.id);
-      if (offers.length > 0) break;
-    }
-  }
+  const serializedOffers = offers
+    .map(serializeOffer)
+    .map((offer) => ({
+      ...offer,
+      shopId: offer.shop.id,
+      shopName: offer.shop.name,
+      priceCents: offer.latestPriceCents,
+      currency: offer.latestCurrency,
+    }));
+  const images = collectUniqueImages(filament, serializedOffers);
 
   return {
     matchedBy,
@@ -980,7 +1092,11 @@ export async function lookupOffers(params: {
       ...filament,
       canonicalUrl: buildAbsoluteUrl(`/filaments/${filament.slug}`),
     },
-    offers: offers.map(serializeOffer),
+    images,
+    offers: serializedOffers,
+    priceHistory,
+    similarSameMaterial,
+    similarDifferentMaterial,
   };
 }
 
