@@ -19,6 +19,7 @@ interface ShopifyVariant {
   id: number;
   title: string;
   sku: string;
+  barcode: string | null;
   price: string;
   available: boolean;
   option1: string | null;
@@ -82,6 +83,17 @@ async function fetchAllProducts(baseUrl: string, isFilament: (p: ShopifyProduct)
   return products;
 }
 
+function isGtin(value: string | null | undefined): boolean {
+  if (!value) return false;
+  return /^\d{12,14}$/.test(value.trim());
+}
+
+function extractGtin(variant: ShopifyVariant): string | null {
+  if (isGtin(variant.barcode)) return variant.barcode!.trim();
+  if (isGtin(variant.sku)) return variant.sku.trim();
+  return null;
+}
+
 function parseWeightFromText(text: string): number | null {
   const match = text.match(/(\d+(?:\.\d+)?)\s*(?:kg|g)/i);
   if (!match) return null;
@@ -117,6 +129,7 @@ function buildCandidateFromVariant(
     spoolCount: 1,
     totalWeightG: weightG,
     sourceConfidence: 0.85,
+    ean: extractGtin(variant),
   };
 }
 

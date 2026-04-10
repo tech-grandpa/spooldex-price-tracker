@@ -11,6 +11,7 @@ export interface ScrapedOfferCandidate {
   spoolCount: number;
   totalWeightG: number | null;
   sourceConfidence: number;
+  ean: string | null;
 }
 
 export interface ExistingOfferInput {

@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { buildLookupFilamentName, compareLookupOfferOrder, getSimilarFilamentScore } from "@/lib/lookup-utils";
 import { prisma } from "@/lib/prisma";
+import { normalizeToEan13 } from "@/lib/scan-code";
 import { buildAbsoluteUrl, computePricePerKgCents, formatFreshness, normalizeComparable, slugify } from "@/lib/utils";
 import { DEFAULT_MARKET } from "@/lib/env";
 
@@ -1041,6 +1042,7 @@ async function getNormalizedLookupCandidates(params: {
 export async function lookupOffers(params: {
   ean?: string | null;
   bambuCode?: string | null;
+  slug?: string | null;
   brand?: string | null;
   material?: string | null;
   series?: string | null;
@@ -1049,10 +1051,15 @@ export async function lookupOffers(params: {
   colorHexes?: string[] | null;
   weightG?: string | null;
 }) {
-  const ean = params.ean?.trim() || "";
+  const rawEan = params.ean?.trim() || "";
+  const ean = normalizeToEan13(rawEan);
   const bambuCode = params.bambuCode?.trim() || "";
+  const slug = params.slug?.trim() || "";
 
   let filament =
+    (slug
+      ? await prisma.filament.findFirst({ where: { slug } })
+      : null) ||
     (ean
       ? await prisma.filament.findFirst({ where: { ean } })
       : null) ||
@@ -1061,8 +1068,21 @@ export async function lookupOffers(params: {
       : null);
 
   let matchedBy: string | null = filament
-    ? (ean ? "ean" : "bambuCode")
+    ? (slug ? "slug" : ean ? "ean" : "bambuCode")
     : null;
+
+  // Offer-level EAN fallback: if no filament has this EAN, check offer records
+  if (!filament && ean) {
+    const offerWithEan = await prisma.offer.findFirst({
+      where: { ean },
+      include: { items: { include: { filament: true }, take: 1 } },
+    });
+    if (offerWithEan?.items[0]?.filament) {
+      filament = offerWithEan.items[0].filament;
+      matchedBy = "offer-ean";
+    }
+  }
+
   let normalizedCandidates: Awaited<ReturnType<typeof getNormalizedLookupCandidates>> = [];
 
   if (!filament) {
@@ -1179,6 +1199,7 @@ export async function upsertOfferSnapshot(args: {
   lastSeenAt?: Date;
   etag?: string | null;
   lastModifiedHeader?: string | null;
+  ean?: string | null;
 }) {
   const now = new Date();
   const existingOffer = await prisma.offer.findUnique({
@@ -1212,6 +1233,7 @@ export async function upsertOfferSnapshot(args: {
       url: args.url,
       affiliateUrl: args.affiliateUrl || args.url,
       imageUrl: args.imageUrl,
+      ean: args.ean,
       etag: args.etag,
       lastModifiedHeader: args.lastModifiedHeader,
       packType: args.packType || "single",
@@ -1241,6 +1263,7 @@ export async function upsertOfferSnapshot(args: {
       url: args.url,
       affiliateUrl: args.affiliateUrl || args.url,
       imageUrl: args.imageUrl,
+      ean: args.ean,
       etag: args.etag,
       lastModifiedHeader: args.lastModifiedHeader,
       packType: args.packType || "single",
@@ -1283,6 +1306,14 @@ export async function upsertOfferSnapshot(args: {
   // filament is Pink Citrus). Instead, we let the display layer fall back
   // to the color swatch for filaments without a canonical image.
 
+  // Backfill filament EAN from offer EAN when the filament has none
+  if (args.ean) {
+    await prisma.filament.updateMany({
+      where: { id: args.filamentId, ean: null },
+      data: { ean: args.ean },
+    });
+  }
+
   return offer;
 }
 
@@ -1320,6 +1351,7 @@ export async function refreshOfferSnapshot(args: {
   lastSeenAt?: Date;
   etag?: string | null;
   lastModifiedHeader?: string | null;
+  ean?: string | null;
 }) {
   const now = new Date();
   const existingOffer = await prisma.offer.findUniqueOrThrow({
@@ -1341,6 +1373,7 @@ export async function refreshOfferSnapshot(args: {
       url: args.url,
       affiliateUrl: args.affiliateUrl || args.url,
       imageUrl: args.imageUrl,
+      ean: args.ean,
       etag: args.etag,
       lastModifiedHeader: args.lastModifiedHeader,
       packType: args.packType || "single",

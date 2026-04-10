@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { lookupOffers } from "@/lib/data";
+import { classifyScanCode } from "@/lib/scan-code";
 
 const querySchema = z.object({
   ean: z.string().optional(),
   bambuCode: z.string().optional(),
+  scanCode: z.string().optional(),
   brand: z.string().optional(),
   material: z.string().optional(),
   series: z.string().optional(),
@@ -19,6 +21,7 @@ export async function GET(request: Request) {
   const params = querySchema.parse({
     ean: url.searchParams.get("ean") || undefined,
     bambuCode: url.searchParams.get("bambuCode") || undefined,
+    scanCode: url.searchParams.get("scanCode") || undefined,
     brand: url.searchParams.get("brand") || undefined,
     material: url.searchParams.get("material") || undefined,
     series: url.searchParams.get("series") || undefined,
@@ -28,11 +31,22 @@ export async function GET(request: Request) {
     weightG: url.searchParams.get("weightG") || undefined,
   });
 
+  // Expand scanCode into specific lookup params
+  const scanOverrides = params.scanCode ? classifyScanCode(params.scanCode) : {};
+
   const data = await lookupOffers({
-    ...params,
+    ean: scanOverrides.ean || params.ean,
+    bambuCode: scanOverrides.bambuCode || params.bambuCode,
+    slug: scanOverrides.slug,
+    brand: params.brand,
+    material: params.material,
+    series: params.series,
+    colorName: params.colorName,
+    colorHex: params.colorHex,
     colorHexes: params.colorHexes
       ? params.colorHexes.split(",").map((value) => value.trim()).filter(Boolean)
       : undefined,
+    weightG: params.weightG,
   });
   if (!data) {
     return NextResponse.json({ data: null }, {

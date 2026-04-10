@@ -136,6 +136,7 @@ export const extrudrScraper: ShopScraper = {
         spoolCount: offer.spoolCount,
         totalWeightG: offer.totalWeightG,
         sourceConfidence: offer.sourceConfidence ?? 0.78,
+        ean: null,
       }));
     const candidate = selectMatchingCandidate(offer, candidates);
 
@@ -203,6 +204,7 @@ export const extrudrScraper: ShopScraper = {
             spoolCount: 1,
             totalWeightG: variant.name.includes("0.8") || variant.name.includes("0,8") ? 800 : variant.name.includes("1.1") || variant.name.includes("1,1") ? 1100 : 1000,
             sourceConfidence: 0.78,
+            ean: null,
           });
         }
       } catch {

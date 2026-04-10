@@ -16,6 +16,9 @@ interface BambuJsonLdVariant {
   sku?: string;
   name?: string;
   image?: string | string[];
+  gtin13?: string;
+  gtin12?: string;
+  gtin?: string;
   offers?: {
     url?: string;
     price?: number | string;
@@ -157,6 +160,7 @@ export function parseBambuProductPageVariants(html: string, pageUrl: string) {
             currency: variant.offers?.priceCurrency || "EUR",
             stockText: variant.offers?.availability || null,
             sourceConfidence: 0.96,
+            ean: variant.gtin13 || variant.gtin12 || variant.gtin || null,
           });
 
           if (!candidate) continue;

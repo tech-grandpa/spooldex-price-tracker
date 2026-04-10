@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseBambuProductPageVariants, parseBambuTierOffer } from "@/lib/scrapers/bambu-store";
+import { extractJsonLdOffers } from "@/lib/scrapers/common";
 import { prusaStoreScraper } from "@/lib/scrapers/prusa-store";
 import { extractOdooVariantOffers } from "@/lib/scrapers/sitemap-shop";
 import { threeDjakeScraper } from "@/lib/scrapers/three-djake";
@@ -104,6 +105,108 @@ describe("shop parsers", () => {
     expect(offers[0]?.title).toContain("Prusament PLA");
     expect(offers[0]?.priceCents).toBe(3299);
     expect(offers[0]?.inStock).toBe(true);
+  });
+
+  it("extracts EAN from JSON-LD gtin13 field", () => {
+    const offers = extractJsonLdOffers(
+      `
+        <script type="application/ld+json">
+          {
+            "@type": "Product",
+            "name": "PLA Basic Black 1kg",
+            "sku": "PLB-001",
+            "gtin13": "4260712340123",
+            "url": "https://example.com/pla-basic-black",
+            "offers": {
+              "@type": "Offer",
+              "price": 19.99,
+              "priceCurrency": "EUR",
+              "availability": "https://schema.org/InStock"
+            }
+          }
+        </script>
+      `,
+      "https://example.com/pla-basic-black",
+    );
+
+    expect(offers[0]?.ean).toBe("4260712340123");
+    expect(offers[0]?.priceCents).toBe(1999);
+  });
+
+  it("extracts EAN from JSON-LD gtin12 field when gtin13 is absent", () => {
+    const offers = extractJsonLdOffers(
+      `
+        <script type="application/ld+json">
+          {
+            "@type": "Product",
+            "name": "PLA Green 1kg",
+            "sku": "PLG-002",
+            "gtin12": "012345678901",
+            "url": "https://example.com/pla-green",
+            "offers": {
+              "@type": "Offer",
+              "price": 21.50,
+              "priceCurrency": "EUR"
+            }
+          }
+        </script>
+      `,
+      "https://example.com/pla-green",
+    );
+
+    expect(offers[0]?.ean).toBe("012345678901");
+  });
+
+  it("returns null ean when no GTIN fields present in JSON-LD", () => {
+    const offers = extractJsonLdOffers(
+      `
+        <script type="application/ld+json">
+          {
+            "@type": "Product",
+            "name": "PLA Red 1kg",
+            "sku": "PLR-003",
+            "url": "https://example.com/pla-red",
+            "offers": {
+              "@type": "Offer",
+              "price": 18.00,
+              "priceCurrency": "EUR"
+            }
+          }
+        </script>
+      `,
+      "https://example.com/pla-red",
+    );
+
+    expect(offers[0]?.ean).toBeNull();
+  });
+
+  it("extracts EAN from Bambu JSON-LD gtin13 field", () => {
+    const variants = parseBambuProductPageVariants(
+      `
+        <script type="application/ld+json">
+          {
+            "@type": "ProductGroup",
+            "url": "https://eu.store.bambulab.com/products/pla-basic",
+            "hasVariant": [
+              {
+                "@type": "Product",
+                "sku": "12345",
+                "gtin13": "8901234567890",
+                "name": "PLA Basic - White (GFL99-01)",
+                "offers": {
+                  "price": 15.99,
+                  "priceCurrency": "EUR",
+                  "availability": "https://schema.org/InStock"
+                }
+              }
+            ]
+          }
+        </script>
+      `,
+      "https://eu.store.bambulab.com/products/pla-basic",
+    );
+
+    expect(variants[0]?.candidate.ean).toBe("8901234567890");
   });
 
   it("extracts Odoo product variants for color-based product pages", () => {

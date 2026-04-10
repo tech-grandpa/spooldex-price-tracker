@@ -55,6 +55,7 @@ model Offer {
   spoolCount            Int             @default(1)
   totalWeightG          Int?
   imageUrl              String?
+  ean                   String?
   etag                  String?
   lastModifiedHeader    String?
   lastCheckedAt         DateTime?
@@ -74,6 +75,7 @@ model Offer {
 
   @@unique([shopId, externalId])
   @@index([shopId])
+  @@index([ean])
   @@index([latestPriceCents])
   @@index([latestScrapedAt])
 }

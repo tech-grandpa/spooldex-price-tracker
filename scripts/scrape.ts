@@ -193,6 +193,7 @@ async function runOfferUpdates(shopId: string, shopName: string, limit: number) 
           lastSeenAt: new Date(),
           etag: result.etag,
           lastModifiedHeader: result.lastModifiedHeader,
+          ean: result.candidate.ean,
         });
         refreshed++;
         continue;
@@ -312,6 +313,7 @@ async function runDiscoveryShop(shopId: string, shopName: string, scraper: NonNu
           totalWeightG: match.totalWeightG ?? filament.weightG * match.spoolCount,
           sourceConfidence: match.sourceConfidence,
           lastSeenAt: new Date(),
+          ean: match.ean,
         });
         matched++;
       }

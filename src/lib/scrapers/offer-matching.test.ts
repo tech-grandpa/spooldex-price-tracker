@@ -38,6 +38,7 @@ function buildCandidate(overrides: Partial<ScrapedOfferCandidate> = {}): Scraped
     spoolCount: 1,
     totalWeightG: 1000,
     sourceConfidence: 0.75,
+    ean: null,
     ...overrides,
   };
 }

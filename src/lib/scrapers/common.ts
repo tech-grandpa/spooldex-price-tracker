@@ -11,6 +11,10 @@ type JsonLdNode = Record<string, unknown> & {
   image?: string | string[];
   sku?: string;
   productID?: string;
+  gtin13?: string;
+  gtin12?: string;
+  gtin?: string;
+  gtin14?: string;
 };
 
 function asArray<T>(value: T | T[] | null | undefined): T[] {
@@ -48,6 +52,7 @@ function extractOffer(node: JsonLdNode, pageUrl: string): ScrapedOfferCandidate 
   const spoolCount = spoolCountMatch ? Number(spoolCountMatch[1]) : 1;
   const externalId =
     String(node.sku ?? node.productID ?? slugify(`${title ?? "offer"}-${url}`)).slice(0, 100);
+  const ean = (node.gtin13 || node.gtin12 || node.gtin || node.gtin14 || null) as string | null;
 
   if (!title) return null;
 
@@ -66,6 +71,7 @@ function extractOffer(node: JsonLdNode, pageUrl: string): ScrapedOfferCandidate 
     spoolCount,
     totalWeightG: inferredWeightG ? inferredWeightG * spoolCount : inferredWeightG,
     sourceConfidence: 0.55,
+    ean,
   };
 }
 
@@ -165,6 +171,7 @@ export function buildCandidate(input: {
   currency?: string | null;
   stockText?: string | null;
   sourceConfidence?: number;
+  ean?: string | null;
 }) {
   const title = collapseWhitespace(input.title);
   if (!title) return null;
@@ -188,6 +195,7 @@ export function buildCandidate(input: {
     spoolCount,
     totalWeightG,
     sourceConfidence: input.sourceConfidence ?? 0.6,
+    ean: input.ean || null,
   } satisfies ScrapedOfferCandidate;
 }
 
