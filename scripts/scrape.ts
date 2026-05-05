@@ -291,11 +291,19 @@ async function runDiscoveryShop(shopId: string, shopName: string, scraper: NonNu
 
       if (strongMatches.length === 0) continue;
 
+      // Some retailers expose generic or mismatched product images that are not reliable
+      // enough for color-specific filament variants. Keep those offers image-less and let
+      // the UI fall back to canonical filament imagery / generated spool previews.
+      const unreliableImageShops = new Set(["formfutura", "3dmensionals", "colorfabb"]);
+      const skipImages = unreliableImageShops.has(shopId);
+
       for (const match of strongMatches.slice(0, 4)) {
-        const cachedImage = await cacheRemoteImageToR2(
-          match.imageUrl || filament.imageUrl,
-          `offers/${shopId}/${match.externalId}.jpg`,
-        );
+        const cachedImage = skipImages
+          ? null
+          : await cacheRemoteImageToR2(
+              match.imageUrl || filament.imageUrl,
+              `offers/${shopId}/${match.externalId}.jpg`,
+            );
 
         await upsertOfferSnapshot({
           shopId,
@@ -304,7 +312,7 @@ async function runDiscoveryShop(shopId: string, shopName: string, scraper: NonNu
           title: match.title,
           url: match.url,
           affiliateUrl: match.affiliateUrl,
-          imageUrl: cachedImage || match.imageUrl || filament.imageUrl,
+          imageUrl: skipImages ? null : cachedImage || match.imageUrl || filament.imageUrl,
           priceCents: match.priceCents,
           currency: match.currency,
           inStock: match.inStock,
